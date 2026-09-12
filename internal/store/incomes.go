@@ -150,10 +150,15 @@ func (s *Store) SetIncomeVoided(id int64, voided bool) error {
 
 // GGMAXWallet holds the money currently held on the GGMAX platform.
 type GGMAXWallet struct {
-	Available float64 // released, not yet withdrawn to the bank
-	Pending   float64 // "a liberar": not released yet
+	Available float64 // released, not yet withdrawn to the bank (with manual adjustment)
+	Pending   float64 // "a liberar": not released yet (with manual adjustment)
 	Withdrawn float64 // total already moved to the bank
 	Refunded  float64 // total voided (refunds/problems)
+
+	AdjAvailable  float64 // manual offset applied to Available
+	AdjPending    float64 // manual offset applied to Pending
+	BaseAvailable float64 // Available before the manual adjustment
+	BasePending   float64 // Pending before the manual adjustment
 }
 
 // GGMAXWalletState computes the current GGMAX balances as of "on".
@@ -184,12 +189,24 @@ func (s *Store) GGMAXWalletState(on time.Time) (GGMAXWallet, error) {
 	if err != nil {
 		return w, err
 	}
-	w.Pending = pending
 	w.Withdrawn = withdrawn
 	w.Refunded = refunded
-	w.Available = released - withdrawn
+	// Base may go negative when withdrawals exceed imported released sales
+	// (e.g. the user relies on a manual adjustment); only the final displayed
+	// Available is clamped, so withdrawals always reduce the shown balance.
+	w.BaseAvailable = released - withdrawn
+	w.BasePending = pending
+
+	adjA, adjP := s.GGMAXAdjustments()
+	w.AdjAvailable = adjA
+	w.AdjPending = adjP
+	w.Available = w.BaseAvailable + adjA
 	if w.Available < 0 {
 		w.Available = 0
+	}
+	w.Pending = w.BasePending + adjP
+	if w.Pending < 0 {
+		w.Pending = 0
 	}
 	return w, nil
 }

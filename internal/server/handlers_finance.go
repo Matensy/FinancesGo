@@ -1,6 +1,7 @@
 package server
 
 import (
+	"math"
 	"net/http"
 	"time"
 
@@ -188,6 +189,25 @@ func (a *App) handleGGMAXVoid(w http.ResponseWriter, r *http.Request) {
 	a.withCore(func(c *core) { _ = c.store.SetIncomeVoided(id, void) })
 	redirectBack(w, r, "/financeiro")
 }
+
+// handleGGMAXAdjust overrides the GGMAX wallet to exactly match the values the
+// user reads on the site, by back-solving a manual offset over the computed base.
+func (a *App) handleGGMAXAdjust(w http.ResponseWriter, r *http.Request) {
+	desiredAvail := parseMoney(r.FormValue("available"))
+	desiredPend := parseMoney(r.FormValue("pending"))
+	a.withCore(func(c *core) {
+		wallet, err := c.store.GGMAXWalletState(time.Now())
+		if err != nil {
+			return
+		}
+		adjA := round2fin(desiredAvail - wallet.BaseAvailable)
+		adjP := round2fin(desiredPend - wallet.BasePending)
+		_ = c.store.SetGGMAXAdjustments(adjA, adjP)
+	})
+	redirectBack(w, r, "/financeiro#ggmax")
+}
+
+func round2fin(v float64) float64 { return math.Round(v*100) / 100 }
 
 // handleGGMAXWithdraw registers money moved from GGMAX to the bank.
 func (a *App) handleGGMAXWithdraw(w http.ResponseWriter, r *http.Request) {

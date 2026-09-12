@@ -19,7 +19,28 @@ const (
 	keyCardUsed       = "card_used"
 	keyCardDueDay     = "card_due_day"
 	keyMonthlyGoal    = "monthly_goal"
+	keyGGMAXAdjAvail  = "ggmax_adj_available"
+	keyGGMAXAdjPend   = "ggmax_adj_pending"
 )
+
+// GGMAXAdjustments returns the manual offsets applied to the GGMAX wallet.
+func (s *Store) GGMAXAdjustments() (available, pending float64) {
+	if v, ok, _ := s.getSetting(keyGGMAXAdjAvail); ok {
+		available, _ = strconv.ParseFloat(v, 64)
+	}
+	if v, ok, _ := s.getSetting(keyGGMAXAdjPend); ok {
+		pending, _ = strconv.ParseFloat(v, 64)
+	}
+	return available, pending
+}
+
+// SetGGMAXAdjustments stores the manual GGMAX wallet offsets.
+func (s *Store) SetGGMAXAdjustments(available, pending float64) error {
+	if err := s.SetSetting(keyGGMAXAdjAvail, strconv.FormatFloat(available, 'f', 2, 64)); err != nil {
+		return err
+	}
+	return s.SetSetting(keyGGMAXAdjPend, strconv.FormatFloat(pending, 'f', 2, 64))
+}
 
 func (s *Store) getSetting(key string) (string, bool, error) {
 	var v string

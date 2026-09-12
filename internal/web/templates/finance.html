@@ -27,8 +27,14 @@
 <div class="card mb" id="ggmax">
   <div class="card-head">
     <div><h2 class="card-title">Carteira GGMAX</h2><div class="card-sub">Dinheiro na plataforma — só entra no seu saldo quando você saca</div></div>
-    <button class="btn sm primary" onclick="openDialog('dlg-withdraw')">{{icon "download"}} Registrar saque</button>
+    <div class="btn-row">
+      <button class="btn sm" onclick="openDialog('dlg-ggmax-adjust')">{{icon "edit"}} Ajustar</button>
+      <button class="btn sm primary" onclick="openDialog('dlg-withdraw')">{{icon "download"}} Registrar saque</button>
+    </div>
   </div>
+  {{if or (ne .Wallet.AdjAvailable 0.0) (ne .Wallet.AdjPending 0.0)}}
+  <div class="note info sm">{{icon "info"}}<div>Ajuste manual ativo: {{if ne .Wallet.AdjAvailable 0.0}}disponível {{if gt .Wallet.AdjAvailable 0.0}}+{{end}}{{money .Wallet.AdjAvailable}}{{end}}{{if ne .Wallet.AdjPending 0.0}} · à liberar {{if gt .Wallet.AdjPending 0.0}}+{{end}}{{money .Wallet.AdjPending}}{{end}}.</div></div>
+  {{end}}
   <div class="grid cols-3 mb">
     <div class="tl-item"><div class="lbl">Disponível para sacar</div><div class="amt">{{money .Wallet.Available}}</div></div>
     <div class="tl-item"><div class="lbl">À liberar</div><div class="amt warn">{{money .Wallet.Pending}}</div></div>
@@ -61,6 +67,21 @@
   </table></div>
   {{else}}<div class="empty">{{icon "game"}}<div>Nenhuma venda GGMAX importada. Importe na aba Pokémon GO.</div></div>{{end}}
 </div>
+
+<dialog id="dlg-ggmax-adjust">
+  <form method="post" action="/ggmax/adjust">
+    <input type="hidden" name="return" value="/financeiro#ggmax">
+    <div class="dialog-head"><h3>Ajustar carteira GGMAX</h3><button type="button" class="close-x" onclick="closeDialog('dlg-ggmax-adjust')">{{icon "x"}}</button></div>
+    <div class="dialog-body">
+      <div class="note info sm">{{icon "info"}}<div>Digite os valores que aparecem no site do GGMAX. O app ajusta para bater exatamente, mesmo que a importação esteja incompleta. Não muda o saldo do seu banco.</div></div>
+      <div class="form-grid">
+        <div class="field"><label>Disponível para sacar (R$)</label><input name="available" inputmode="decimal" value="{{num .Wallet.Available}}"></div>
+        <div class="field"><label>À liberar (R$)</label><input name="pending" inputmode="decimal" value="{{num .Wallet.Pending}}"></div>
+      </div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-ggmax-adjust')">Cancelar</button><button class="btn primary">Salvar valores</button></div>
+  </form>
+</dialog>
 
 <dialog id="dlg-withdraw">
   <form method="post" action="/ggmax/withdraw">

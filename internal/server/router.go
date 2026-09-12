@@ -77,6 +77,7 @@ func (a *App) routes() http.Handler {
 	// GGMAX wallet.
 	mux.HandleFunc("POST /ggmax/{id}/void", a.requireAuth(a.handleGGMAXVoid))
 	mux.HandleFunc("POST /ggmax/withdraw", a.requireAuth(a.handleGGMAXWithdraw))
+	mux.HandleFunc("POST /ggmax/adjust", a.requireAuth(a.handleGGMAXAdjust))
 
 	return logRequests(mux)
 }
