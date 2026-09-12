@@ -33,9 +33,9 @@
     <select name="time" data-autosubmit>
       <option value="">Todos</option>
       {{$t := .FilterTeam}}
-      <option value="instinct" {{if eq $t "instinct"}}selected{{end}}>Instinct</option>
-      <option value="mystic" {{if eq $t "mystic"}}selected{{end}}>Mystic</option>
-      <option value="valor" {{if eq $t "valor"}}selected{{end}}>Valor</option>
+      <option value="instinct" {{if eq $t "instinct"}}selected{{end}}>Instinct (Amarelo)</option>
+      <option value="mystic" {{if eq $t "mystic"}}selected{{end}}>Mystic (Azul)</option>
+      <option value="valor" {{if eq $t "valor"}}selected{{end}}>Valor (Vermelho)</option>
     </select>
   </form>
   {{if .Tags}}
@@ -169,13 +169,13 @@
 {{define "poke_fields"}}
 <div class="field"><label>Email (login da conta)</label><input name="email" placeholder="conta@exemplo.com"></div>
 <div class="form-grid">
-  <div class="field"><label>Level</label><input name="level" type="number" min="0" max="50" placeholder="40"></div>
+  <div class="field"><label>Level</label><input name="level" type="number" min="0" max="80" placeholder="40"></div>
   <div class="field"><label>Time</label>
     <select name="team">
       <option value="">—</option>
-      <option value="instinct">Instinct</option>
-      <option value="mystic">Mystic</option>
-      <option value="valor">Valor</option>
+      <option value="instinct">Instinct (Amarelo)</option>
+      <option value="mystic">Mystic (Azul)</option>
+      <option value="valor">Valor (Vermelho)</option>
     </select>
   </div>
   <div class="field"><label>Shinys</label><input name="shinies" type="number" min="0" placeholder="0"></div>

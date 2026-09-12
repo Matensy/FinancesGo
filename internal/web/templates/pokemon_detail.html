@@ -78,13 +78,13 @@
     <div class="dialog-body">
       <div class="field"><label>Email</label><input name="email" value="{{$a.Email}}"></div>
       <div class="form-grid">
-        <div class="field"><label>Level</label><input name="level" type="number" value="{{$a.Level}}"></div>
+        <div class="field"><label>Level</label><input name="level" type="number" min="0" max="80" value="{{$a.Level}}"></div>
         <div class="field"><label>Time</label>
           <select name="team">
             <option value="" {{if eq (printf "%s" $a.Team) ""}}selected{{end}}>—</option>
-            <option value="instinct" {{if eq (printf "%s" $a.Team) "instinct"}}selected{{end}}>Instinct</option>
-            <option value="mystic" {{if eq (printf "%s" $a.Team) "mystic"}}selected{{end}}>Mystic</option>
-            <option value="valor" {{if eq (printf "%s" $a.Team) "valor"}}selected{{end}}>Valor</option>
+            <option value="instinct" {{if eq (printf "%s" $a.Team) "instinct"}}selected{{end}}>Instinct (Amarelo)</option>
+            <option value="mystic" {{if eq (printf "%s" $a.Team) "mystic"}}selected{{end}}>Mystic (Azul)</option>
+            <option value="valor" {{if eq (printf "%s" $a.Team) "valor"}}selected{{end}}>Valor (Vermelho)</option>
           </select>
         </div>
         <div class="field"><label>Shinys</label><input name="shinies" type="number" value="{{$a.Shinies}}"></div>

@@ -139,11 +139,11 @@ func safeDate(t time.Time, layout string) string {
 func teamLabel(t models.Team) string {
 	switch t {
 	case models.TeamInstinct:
-		return "Instinct"
+		return "Instinct (Amarelo)"
 	case models.TeamMystic:
-		return "Mystic"
+		return "Mystic (Azul)"
 	case models.TeamValor:
-		return "Valor"
+		return "Valor (Vermelho)"
 	default:
 		return "—"
 	}
