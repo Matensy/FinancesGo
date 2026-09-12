@@ -1,0 +1,42 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}} · FinancesGo</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💜</text></svg>">
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/chart.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="logo">💜</span>
+      <span>FinancesGo<small>finanças + Pokémon GO</small></span>
+    </div>
+    <nav class="nav">
+      <a href="/" class="{{if eq .Section "dashboard"}}active{{end}}"><span class="ic">🏠</span><span class="txt">Dashboard</span></a>
+      <a href="/financeiro" class="{{if eq .Section "financeiro"}}active{{end}}"><span class="ic">💰</span><span class="txt">Financeiro</span></a>
+      <a href="/pokemon" class="{{if eq .Section "pokemon"}}active{{end}}"><span class="ic">🎮</span><span class="txt">Pokémon GO</span></a>
+      <a href="/relatorio" class="{{if eq .Section "relatorio"}}active{{end}}"><span class="ic">📊</span><span class="txt">Relatório</span></a>
+      <div class="nav-sep"></div>
+      <a href="/configuracoes" class="{{if eq .Section "configuracoes"}}active{{end}}"><span class="ic">⚙️</span><span class="txt">Configurações</span></a>
+      {{if .Cfg.HasPassword}}
+      <form method="post" action="/logout" style="margin-top:4px">
+        <button class="nav-logout" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;color:var(--muted);font-weight:500;width:100%">
+          <span class="ic">🚪</span><span class="txt">Sair</span>
+        </button>
+      </form>
+      {{end}}
+    </nav>
+  </aside>
+  <main class="content">
+    {{block "content" .}}{{end}}
+  </main>
+</div>
+{{block "page_scripts" .}}{{end}}
+</body>
+</html>{{end}}

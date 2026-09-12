@@ -1,0 +1,215 @@
+{{define "content"}}
+<div class="topbar">
+  <div>
+    <h1>Pokémon GO</h1>
+    <div class="sub">Catálogo de contas para venda · taxa GGMAX aplicada automaticamente</div>
+  </div>
+  <button class="btn primary" onclick="openDialog('dlg-create')">+ Nova conta</button>
+</div>
+
+<div class="grid cols-4 mb">
+  <div class="card stat"><span class="label">Contas ativas</span><span class="value sm">{{.Stats.Ativa}}</span><span class="hint">{{.Stats.Anunciada}} anunciada(s)</span></div>
+  <div class="card stat"><span class="label">Valor do catálogo</span><span class="value sm">{{money .Stats.CatalogValue}}</span></div>
+  <div class="card stat"><span class="label">Em espera (7 dias)</span><span class="value sm warn">{{money .Stats.PendingValue}}</span><span class="hint">{{.Stats.PendingMature}} conta(s)</span></div>
+  <div class="card stat"><span class="label">Com problema</span><span class="value sm {{if gt .Stats.Problema 0}}neg{{end}}">{{.Stats.Problema}}</span></div>
+</div>
+
+<div class="filters">
+  <form method="get" class="field" style="margin:0">
+    <label>Status</label>
+    <select name="status" data-autosubmit>
+      <option value="">Todos</option>
+      {{$s := .FilterStatus}}
+      <option value="ativa" {{if eq $s "ativa"}}selected{{end}}>Ativa</option>
+      <option value="anunciada" {{if eq $s "anunciada"}}selected{{end}}>Anunciada</option>
+      <option value="vendida" {{if eq $s "vendida"}}selected{{end}}>Vendida</option>
+      <option value="reembolsada" {{if eq $s "reembolsada"}}selected{{end}}>Reembolsada</option>
+      <option value="problema" {{if eq $s "problema"}}selected{{end}}>Com problema</option>
+    </select>
+  </form>
+  <form method="get" class="field" style="margin:0">
+    <input type="hidden" name="status" value="{{.FilterStatus}}">
+    <label>Time</label>
+    <select name="time" data-autosubmit>
+      <option value="">Todos</option>
+      {{$t := .FilterTeam}}
+      <option value="instinct" {{if eq $t "instinct"}}selected{{end}}>Instinct</option>
+      <option value="mystic" {{if eq $t "mystic"}}selected{{end}}>Mystic</option>
+      <option value="valor" {{if eq $t "valor"}}selected{{end}}>Valor</option>
+    </select>
+  </form>
+  {{if .Tags}}
+  <form method="get" class="field" style="margin:0">
+    <input type="hidden" name="status" value="{{.FilterStatus}}">
+    <label>Tag</label>
+    <select name="tag" data-autosubmit>
+      <option value="">Todas</option>
+      {{range .Tags}}<option value="{{.}}" {{if eq . $.FilterTag}}selected{{end}}>{{.}}</option>{{end}}
+    </select>
+  </form>
+  {{end}}
+  <div class="spacer"></div>
+  <a class="btn sm" href="/pokemon">Limpar filtros</a>
+</div>
+
+{{if .Accounts}}
+<div class="poke-grid">
+  {{range .Accounts}}
+  <div class="poke-card team-{{.Team}}{{if eq .Status "problema"}} is-problem{{end}}">
+    <div class="pc-body">
+      <div class="pc-top">
+        <div>
+          <div class="pc-title">{{if .Email}}{{.Email}}{{else}}Conta #{{.ID}}{{end}}</div>
+          <div class="pc-sub">
+            <span class="team-dot team-{{.Team}}-dot"></span> {{teamLabel .Team}} · Level {{.Level}}
+          </div>
+        </div>
+        <span class="badge {{statusCls .Status}}">{{statusLbl .Status}}</span>
+      </div>
+
+      {{if and (eq .Status "problema") (nonEmpty .ProblemNote)}}
+      <div class="alert danger small" style="margin:8px 0">⚠️ {{.ProblemNote}}</div>
+      {{end}}
+      {{if eq .Status "vendida"}}
+      <div class="alert info small" style="margin:8px 0">
+        {{if .Matured}}✅ Valor já creditado ao saldo{{else}}⏳ Libera em {{date (derefTime .MaturesAt)}}{{end}}
+      </div>
+      {{end}}
+
+      <div class="pc-stats">
+        <div><span class="k">Lendários:</span> {{if nonEmpty .Legendaries}}{{.Legendaries}}{{else}}—{{end}}</div>
+        <div><span class="k">Shinys:</span> {{.Shinies}}</div>
+        <div style="grid-column:1/3">
+          <span class="k">Pokémons:</span> {{.PokemonCount}} / {{.BagCapacity}}
+          <div class="bag-bar"><span style="width:{{bagPct .PokemonCount .BagCapacity}}%"></span></div>
+        </div>
+      </div>
+
+      {{if .TagList}}<div>{{range .TagList}}<span class="tag">{{.}}</span>{{end}}</div>{{end}}
+
+      <div class="pc-price">
+        <div>
+          <div class="base">Base {{money .BaseValue}} + GGMAX {{pct .GGMaxRate}}</div>
+          <div class="final">{{money .FinalPrice}}</div>
+        </div>
+        {{if .SoldValue}}<div class="right small muted">Vendida por<br><b class="pos">{{money (deref .SoldValue)}}</b></div>{{end}}
+      </div>
+    </div>
+    <div class="pc-actions">
+      <a class="btn sm ghost" href="/pokemon/{{.ID}}">Detalhes</a>
+      {{if or (eq .Status "ativa") (eq .Status "anunciada")}}
+        <button class="btn sm primary" onclick="sellAccount({{.ID}})">Vender</button>
+        <button class="btn sm" onclick="editAccount({{.ID}})">Editar</button>
+        {{if eq .Status "ativa"}}
+        <form method="post" action="/pokemon/{{.ID}}/status" style="display:inline"><input type="hidden" name="status" value="anunciada"><button class="btn sm">Anunciar</button></form>
+        {{else}}
+        <form method="post" action="/pokemon/{{.ID}}/status" style="display:inline"><input type="hidden" name="status" value="ativa"><button class="btn sm">Reativar</button></form>
+        {{end}}
+        <button class="btn sm danger" onclick="problemAccount({{.ID}}, false)">Problema</button>
+      {{else if eq .Status "vendida"}}
+        <button class="btn sm danger" onclick="refundAccount({{.ID}})">Reembolso</button>
+        <button class="btn sm" onclick="editAccount({{.ID}})">Editar</button>
+      {{else if eq .Status "problema"}}
+        <form method="post" action="/pokemon/{{.ID}}/problem" style="display:inline"><button class="btn sm primary">Resolver problema</button></form>
+        <button class="btn sm" onclick="editAccount({{.ID}})">Editar</button>
+      {{else}}
+        <form method="post" action="/pokemon/{{.ID}}/delete" style="display:inline" onsubmit="return confirm('Excluir conta?')"><button class="btn sm danger">Excluir</button></form>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+</div>
+{{else}}
+<div class="card"><div class="empty"><div class="big">🎮</div>Nenhuma conta cadastrada ainda.<br><button class="btn primary mt" onclick="openDialog('dlg-create')">+ Cadastrar primeira conta</button></div></div>
+{{end}}
+
+<div id="accounts-data" data-json="{{.AccountsJSON}}" hidden></div>
+
+<!-- Create dialog -->
+<dialog id="dlg-create">
+  <form method="post" action="/pokemon" id="form-create">
+    <div class="dialog-head"><h3>Nova conta Pokémon GO</h3><button type="button" class="close-x" onclick="closeDialog('dlg-create')">×</button></div>
+    <div class="dialog-body">
+      {{template "poke_fields" .}}
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-create')">Cancelar</button><button class="btn primary">Salvar conta</button></div>
+  </form>
+</dialog>
+
+<!-- Edit dialog -->
+<dialog id="dlg-edit">
+  <form method="post" action="/pokemon/0/update">
+    <div class="dialog-head"><h3>Editar conta</h3><button type="button" class="close-x" onclick="closeDialog('dlg-edit')">×</button></div>
+    <div class="dialog-body">
+      {{template "poke_fields" .}}
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-edit')">Cancelar</button><button class="btn primary">Salvar alterações</button></div>
+  </form>
+</dialog>
+
+<!-- Sell dialog -->
+<dialog id="dlg-sell">
+  <form method="post" action="/pokemon/0/sell">
+    <div class="dialog-head"><h3>Registrar venda</h3><button type="button" class="close-x" onclick="closeDialog('dlg-sell')">×</button></div>
+    <div class="dialog-body">
+      <p class="muted small">Conta: <b class="sell-info"></b>. O valor entra no saldo automaticamente após o período de espera.</p>
+      <div class="form-grid">
+        <div class="field"><label>Valor da venda (R$)</label><input name="value" inputmode="decimal" placeholder="0,00"></div>
+        <div class="field"><label>Data da venda</label><input name="sold_at" type="date" value="{{today}}"></div>
+      </div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-sell')">Cancelar</button><button class="btn primary">Confirmar venda</button></div>
+  </form>
+</dialog>
+
+<!-- Problem dialog -->
+<dialog id="dlg-problem">
+  <form method="post" action="/pokemon/0/problem">
+    <div class="dialog-head"><h3 class="dlg-problem-title">Marcar problema na conta</h3><button type="button" class="close-x" onclick="closeDialog('dlg-problem')">×</button></div>
+    <div class="dialog-body">
+      <div class="field"><label>O que aconteceu?</label><textarea name="note" placeholder="Ex: conta suspensa, login com erro..."></textarea></div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-problem')">Cancelar</button><button class="btn danger">Marcar problema</button></div>
+  </form>
+</dialog>
+
+<!-- Refund dialog -->
+<dialog id="dlg-refund">
+  <form method="post" action="/pokemon/0/refund">
+    <div class="dialog-head"><h3>Registrar reembolso</h3><button type="button" class="close-x" onclick="closeDialog('dlg-refund')">×</button></div>
+    <div class="dialog-body">
+      <p class="muted small">Se o valor já tinha entrado no saldo, será lançada uma saída automática no financeiro.</p>
+      <div class="field"><label>Motivo do reembolso</label><textarea name="reason" placeholder="Ex: comprador desistiu"></textarea></div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-refund')">Cancelar</button><button class="btn danger">Confirmar reembolso</button></div>
+  </form>
+</dialog>
+{{end}}
+
+{{define "poke_fields"}}
+<div class="field"><label>Email (login da conta)</label><input name="email" placeholder="conta@exemplo.com"></div>
+<div class="form-grid">
+  <div class="field"><label>Level</label><input name="level" type="number" min="0" max="50" placeholder="40"></div>
+  <div class="field"><label>Time</label>
+    <select name="team">
+      <option value="">—</option>
+      <option value="instinct">Instinct (amarelo)</option>
+      <option value="mystic">Mystic (azul)</option>
+      <option value="valor">Valor (vermelho)</option>
+    </select>
+  </div>
+  <div class="field"><label>Shinys</label><input name="shinies" type="number" min="0" placeholder="0"></div>
+</div>
+<div class="field"><label>Lendários (quantidade ou lista)</label><input name="legendaries" placeholder="Ex: 3 (Mewtwo, Rayquaza...)"></div>
+<div class="form-grid">
+  <div class="field"><label>Qtd. Pokémons</label><input name="pokemon_count" type="number" min="0" placeholder="0"></div>
+  <div class="field"><label>Capacidade da bag</label><input name="bag_capacity" type="number" min="0" placeholder="0"></div>
+</div>
+<div class="field"><label>Descrição</label><textarea name="description" placeholder="Observações da conta..."></textarea></div>
+<div class="field"><label>Tags (separadas por vírgula)</label><input name="tags" placeholder="full legendary, shiny hunter"></div>
+<div class="form-grid">
+  <div class="field"><label>Valor base (R$)</label><input name="base_value" inputmode="decimal" placeholder="0,00"></div>
+  <div class="field"><label>Taxa GGMAX (%)</label><input name="ggmax_rate" inputmode="decimal" value="{{pctNum .DefaultRate}}" placeholder="15,98"></div>
+</div>
+<div class="alert info small">Preço final de venda: <b class="price-preview">R$ 0,00</b></div>
+{{end}}

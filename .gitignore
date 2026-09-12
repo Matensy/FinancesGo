@@ -1,0 +1,20 @@
+# Build artifacts
+/financesgo
+/financesgo.exe
+*.exe
+*.out
+
+# Runtime data (the SQLite DB, exports and backups live here)
+/data/
+/testdata/
+/t[0-9]*/
+/tx/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# stray runtime file
+server.pid

@@ -1,0 +1,98 @@
+{{define "content"}}
+<div class="topbar">
+  <div>
+    <h1>Relatório mensal</h1>
+    <div class="sub">Resumo de {{.Period}} — receitas, gastos e vendas Pokémon GO</div>
+  </div>
+  <div class="btn-row">
+    <form method="post" action="/export/xlsx" style="display:inline"><button class="btn sm">⬇ Exportar .xlsx</button></form>
+    <form method="post" action="/export/csv" style="display:inline"><button class="btn sm">⬇ Exportar .csv</button></form>
+  </div>
+</div>
+
+<div class="filters">
+  {{template "month_select" (dict "Options" .MonthOptions "Selected" .Period)}}
+</div>
+
+<div class="grid cols-4 mb">
+  <div class="card stat"><span class="label">Receitas</span><span class="value sm pos">{{money .IncomeTotal}}</span></div>
+  <div class="card stat"><span class="label">Saídas totais</span><span class="value sm neg">{{money .TotalOut}}</span><span class="hint">Contas: {{money .PaidBills}} · Gastos: {{money .ExpenseTotal}}</span></div>
+  <div class="card stat"><span class="label">Resultado do mês</span><span class="value sm {{if lt .Net 0.0}}neg{{else}}pos{{end}}">{{money .Net}}</span></div>
+  <div class="card stat"><span class="label">Renda de Pokémon GO</span><span class="value sm" style="color:var(--purple-2)">{{money .PokemonIncome}}</span></div>
+</div>
+
+<div class="grid cols-2 mb">
+  <div class="card">
+    <h2>Gastos por categoria</h2>
+    {{if .ByCategory}}
+    <div style="height:240px"><canvas id="chart-categories" data-labels="{{.CatLabels}}" data-values="{{.CatValues}}"></canvas></div>
+    {{else}}<div class="empty">Sem gastos registrados neste mês.</div>{{end}}
+  </div>
+  <div class="card">
+    <h2>Resumo Pokémon GO</h2>
+    <div class="grid cols-2" style="gap:12px">
+      <div class="tl-item"><div class="lbl">Contas vendidas no mês</div><div class="amt">{{.SoldCount}}</div></div>
+      <div class="tl-item"><div class="lbl">Total vendido</div><div class="amt pos">{{money .SoldSum}}</div></div>
+      <div class="tl-item"><div class="lbl">Ticket médio</div><div class="amt">{{money .Ticket}}</div></div>
+      <div class="tl-item"><div class="lbl">Contas com problema</div><div class="amt {{if gt .Stats.Problema 0}}neg{{end}}">{{.Stats.Problema}}</div></div>
+    </div>
+  </div>
+</div>
+
+{{if .Problems}}
+<div class="card mb">
+  <h2>Contas com problema</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Conta</th><th>Data</th><th>Observação</th></tr></thead>
+      <tbody>
+        {{range .Problems}}
+        <tr><td>{{if .Email}}{{.Email}}{{else}}#{{.ID}}{{end}}</td><td>{{if .ProblemAt}}{{date (derefTime .ProblemAt)}}{{else}}—{{end}}</td><td class="muted">{{.ProblemNote}}</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+
+<div class="grid cols-2 mb">
+  <div class="card">
+    <h2>Receitas do mês</h2>
+    {{if .Incomes}}
+    <div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Data</th><th class="num">Valor</th></tr></thead><tbody>
+      {{range .Incomes}}<tr><td>{{.Description}}<div class="muted small">{{.Category}}</div></td><td class="nowrap">{{date .Date}}</td><td class="num pos">{{money .Amount}}</td></tr>{{end}}
+    </tbody></table></div>
+    {{else}}<div class="empty">Nenhuma receita.</div>{{end}}
+  </div>
+  <div class="card">
+    <h2>Gastos do mês</h2>
+    {{if .Expenses}}
+    <div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Data</th><th class="num">Valor</th></tr></thead><tbody>
+      {{range .Expenses}}<tr><td>{{.Description}}<div class="muted small">{{.Category}}</div></td><td class="nowrap">{{date .Date}}</td><td class="num neg">{{money .Amount}}</td></tr>{{end}}
+    </tbody></table></div>
+    {{else}}<div class="empty">Nenhum gasto avulso.</div>{{end}}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Histórico de exportações</h2>
+  {{if .Exports}}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Arquivo</th><th>Formato</th><th>Contas</th><th>Data</th><th class="right"></th></tr></thead>
+      <tbody>
+        {{range .Exports}}
+        <tr>
+          <td>{{.Filename}}</td>
+          <td><span class="badge purple">{{.Format}}</span></td>
+          <td>{{.AccountCount}}</td>
+          <td class="nowrap">{{datetime .CreatedAt}}</td>
+          <td class="right"><a class="btn sm ghost" href="/export/download?name={{.Filename}}">Baixar</a></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}<div class="empty">Nenhuma exportação ainda. Use os botões no topo para exportar.</div>{{end}}
+</div>
+{{end}}

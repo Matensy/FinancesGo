@@ -1,0 +1,27 @@
+{{define "projection_timeline"}}
+<div class="timeline">
+  {{range .Points}}
+  <div class="tl-item">
+    <div class="lbl">{{.Label}}</div>
+    <div class="amt {{if lt .Available 0.0}}neg{{else}}pos{{end}}">{{money .Available}}</div>
+    <div class="meta">
+      {{if gt .IncomingTotal 0.0}}+{{money .IncomingTotal}} a receber{{end}}
+      {{if gt .BillsDue 0.0}}{{if gt .IncomingTotal 0.0}} · {{end}}−{{money .BillsDue}} a pagar{{end}}
+      {{if and (eq .IncomingTotal 0.0) (eq .BillsDue 0.0)}}sem movimentos{{end}}
+    </div>
+  </div>
+  {{end}}
+</div>
+{{end}}
+
+{{define "month_select"}}
+<form method="get" class="field" style="margin:0">
+  <label>Mês</label>
+  <select name="mes" data-autosubmit>
+    {{$sel := .Selected}}
+    {{range .Options}}
+    <option value="{{.Value}}" {{if eq .Value $sel}}selected{{end}}>{{.Label}}</option>
+    {{end}}
+  </select>
+</form>
+{{end}}

@@ -1,0 +1,240 @@
+{{define "content"}}
+<div class="topbar">
+  <div>
+    <h1>Financeiro</h1>
+    <div class="sub">Contas fixas, receitas, gastos e projeção de saldo</div>
+  </div>
+  <div class="btn-row">
+    <button class="btn sm" onclick="openDialog('dlg-bill')">+ Conta fixa</button>
+    <button class="btn sm" onclick="openDialog('dlg-recurring')">+ Receita recorrente</button>
+    <button class="btn sm" onclick="openDialog('dlg-income')">+ Receita avulsa</button>
+    <button class="btn sm primary" onclick="openDialog('dlg-expense')">+ Gasto avulso</button>
+  </div>
+</div>
+
+<div class="grid cols-4 mb">
+  <div class="card stat"><span class="label">Saldo atual</span><span class="value sm">{{money .Balance}}</span></div>
+  <div class="card stat"><span class="label">Receitas do mês</span><span class="value sm pos">{{money .IncomeTotal}}</span></div>
+  <div class="card stat"><span class="label">Contas do mês</span><span class="value sm">{{money .BillsTotal}}</span><span class="hint">Pagas: {{money .BillsPaid}}</span></div>
+  <div class="card stat"><span class="label">Gastos avulsos</span><span class="value sm neg">{{money .ExpenseTotal}}</span></div>
+</div>
+
+<div class="card mb">
+  <h2>Quanto posso gastar</h2>
+  {{template "projection_timeline" .Projection}}
+</div>
+
+<div class="filters">
+  {{template "month_select" (dict "Options" .MonthOptions "Selected" .Period)}}
+  <form method="get" class="field" style="margin:0">
+    <input type="hidden" name="mes" value="{{.Period}}">
+    <label>Categoria</label>
+    <select name="categoria" data-autosubmit>
+      <option value="">Todas</option>
+      {{range .Categories}}<option value="{{.}}" {{if eq . $.Category}}selected{{end}}>{{.}}</option>{{end}}
+    </select>
+  </form>
+</div>
+
+<div class="card mb">
+  <div class="card-head"><h2>Contas fixas — {{.Period}}</h2></div>
+  {{if .Bills}}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Conta</th><th>Categoria</th><th>Vencimento</th><th class="num">Valor</th><th>Status</th><th class="right">Ações</th></tr></thead>
+      <tbody>
+        {{range .Bills}}
+        <tr>
+          <td>{{.Name}}</td>
+          <td class="muted">{{.Category}}</td>
+          <td class="nowrap">{{date .DueDate}}</td>
+          <td class="num">{{money .Amount}}</td>
+          <td>
+            {{if eq .Status "paga"}}<span class="badge paga">Paga</span>
+            {{else if eq .Status "atrasada"}}<span class="badge atrasada">Atrasada</span>
+            {{else}}<span class="badge avencer">A vencer</span>{{end}}
+          </td>
+          <td class="right nowrap">
+            {{if .Paid}}
+            <form method="post" action="/bills/{{.ID}}/unpay" style="display:inline">
+              <input type="hidden" name="period" value="{{.Period}}">
+              <input type="hidden" name="return" value="/financeiro?mes={{$.Period}}">
+              <button class="btn sm ghost">Desmarcar</button>
+            </form>
+            {{else}}
+            <form method="post" action="/bills/{{.ID}}/pay" style="display:inline">
+              <input type="hidden" name="period" value="{{.Period}}">
+              <input type="hidden" name="return" value="/financeiro?mes={{$.Period}}">
+              <button class="btn sm primary">Marcar paga</button>
+            </form>
+            {{end}}
+            <form method="post" action="/bills/{{.ID}}/delete" style="display:inline" onsubmit="return confirm('Excluir esta conta fixa?')">
+              <input type="hidden" name="return" value="/financeiro?mes={{$.Period}}">
+              <button class="btn sm danger">✕</button>
+            </form>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="empty"><div class="big">🧾</div>Nenhuma conta fixa cadastrada.</div>
+  {{end}}
+</div>
+
+{{if .Recurring}}
+<div class="card mb">
+  <h2>Receitas recorrentes</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nome</th><th>Dia</th><th>Categoria</th><th class="num">Valor</th><th class="right"></th></tr></thead>
+      <tbody>
+        {{range .Recurring}}
+        <tr>
+          <td>{{.Name}} {{if .IsSalary}}<span class="badge purple">salário</span>{{end}}</td>
+          <td>dia {{.Day}}</td>
+          <td class="muted">{{.Category}}</td>
+          <td class="num pos">{{money .Amount}}</td>
+          <td class="right">
+            <form method="post" action="/recurring-incomes/{{.ID}}/delete" style="display:inline" onsubmit="return confirm('Excluir recorrência?')">
+              <button class="btn sm danger">✕</button>
+            </form>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+
+<div class="grid cols-2">
+  <div class="card">
+    <h2>Receitas — {{.Period}}</h2>
+    {{if .Incomes}}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Descrição</th><th>Data</th><th class="num">Valor</th><th></th></tr></thead>
+        <tbody>
+          {{range .Incomes}}
+          <tr>
+            <td>{{.Description}} {{if eq .Source "pokemon"}}<span class="badge purple">Pokémon</span>{{else if eq .Source "recurring"}}<span class="badge info">recorrente</span>{{end}}<div class="muted small">{{.Category}}</div></td>
+            <td class="nowrap">{{date .Date}}</td>
+            <td class="num pos">{{money .Amount}}</td>
+            <td class="right">
+              {{if eq .Source "manual"}}
+              <form method="post" action="/incomes/{{.ID}}/delete" style="display:inline">
+                <input type="hidden" name="return" value="/financeiro?mes={{$.Period}}">
+                <button class="btn sm danger">✕</button>
+              </form>
+              {{end}}
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}<div class="empty">Sem receitas neste mês.</div>{{end}}
+  </div>
+
+  <div class="card">
+    <h2>Gastos avulsos — {{.Period}}</h2>
+    {{if .Expenses}}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Descrição</th><th>Data</th><th class="num">Valor</th><th></th></tr></thead>
+        <tbody>
+          {{range .Expenses}}
+          <tr>
+            <td>{{.Description}} {{if eq .Source "pokemon"}}<span class="badge danger">reembolso</span>{{end}}<div class="muted small">{{.Category}}</div></td>
+            <td class="nowrap">{{date .Date}}</td>
+            <td class="num neg">{{money .Amount}}</td>
+            <td class="right">
+              {{if eq .Source "manual"}}
+              <form method="post" action="/expenses/{{.ID}}/delete" style="display:inline">
+                <input type="hidden" name="return" value="/financeiro?mes={{$.Period}}">
+                <button class="btn sm danger">✕</button>
+              </form>
+              {{end}}
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}<div class="empty">Sem gastos avulsos neste mês.</div>{{end}}
+  </div>
+</div>
+
+<!-- Dialogs -->
+<dialog id="dlg-bill">
+  <form method="post" action="/bills">
+    <input type="hidden" name="return" value="/financeiro?mes={{.Period}}">
+    <div class="dialog-head"><h3>Nova conta fixa</h3><button type="button" class="close-x" onclick="closeDialog('dlg-bill')">×</button></div>
+    <div class="dialog-body">
+      <div class="field"><label>Nome</label><input name="name" required placeholder="Ex: Aluguel"></div>
+      <div class="form-grid">
+        <div class="field"><label>Valor (R$)</label><input name="amount" required placeholder="0,00" inputmode="decimal"></div>
+        <div class="field"><label>Dia de vencimento</label><input name="due_day" type="number" min="1" max="31" required placeholder="10"></div>
+        <div class="field"><label>Categoria</label><input name="category" placeholder="Moradia" list="cats"></div>
+      </div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-bill')">Cancelar</button><button class="btn primary">Salvar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-recurring">
+  <form method="post" action="/recurring-incomes">
+    <input type="hidden" name="return" value="/financeiro?mes={{.Period}}">
+    <div class="dialog-head"><h3>Receita recorrente</h3><button type="button" class="close-x" onclick="closeDialog('dlg-recurring')">×</button></div>
+    <div class="dialog-body">
+      <div class="field"><label>Nome</label><input name="name" required placeholder="Ex: Salário"></div>
+      <div class="form-grid">
+        <div class="field"><label>Valor (R$)</label><input name="amount" required placeholder="0,00" inputmode="decimal"></div>
+        <div class="field"><label>Dia do mês</label><input name="day" type="number" min="1" max="31" required placeholder="5"></div>
+        <div class="field"><label>Categoria</label><input name="category" placeholder="Salário" list="cats"></div>
+      </div>
+      <div class="check"><input type="checkbox" id="is_salary" name="is_salary"><label for="is_salary">É meu salário (usado no "até o próximo salário")</label></div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-recurring')">Cancelar</button><button class="btn primary">Salvar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-income">
+  <form method="post" action="/incomes">
+    <input type="hidden" name="return" value="/financeiro?mes={{.Period}}">
+    <div class="dialog-head"><h3>Receita avulsa</h3><button type="button" class="close-x" onclick="closeDialog('dlg-income')">×</button></div>
+    <div class="dialog-body">
+      <div class="field"><label>Descrição</label><input name="description" required placeholder="Ex: Freela"></div>
+      <div class="form-grid">
+        <div class="field"><label>Valor (R$)</label><input name="amount" required placeholder="0,00" inputmode="decimal"></div>
+        <div class="field"><label>Data</label><input name="date" type="date" value="{{today}}"></div>
+        <div class="field"><label>Categoria</label><input name="category" placeholder="Freelance" list="cats"></div>
+      </div>
+      <div class="check"><input type="checkbox" id="conf" name="confirmed" checked value="1"><label for="conf">Já recebido (entra no saldo). Desmarque para agendada.</label></div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-income')">Cancelar</button><button class="btn primary">Salvar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-expense">
+  <form method="post" action="/expenses">
+    <input type="hidden" name="return" value="/financeiro?mes={{.Period}}">
+    <div class="dialog-head"><h3>Gasto avulso</h3><button type="button" class="close-x" onclick="closeDialog('dlg-expense')">×</button></div>
+    <div class="dialog-body">
+      <div class="field"><label>Descrição</label><input name="description" required placeholder="Ex: Mercado"></div>
+      <div class="form-grid">
+        <div class="field"><label>Valor (R$)</label><input name="amount" required placeholder="0,00" inputmode="decimal"></div>
+        <div class="field"><label>Data</label><input name="date" type="date" value="{{today}}"></div>
+        <div class="field"><label>Categoria</label><input name="category" placeholder="Alimentação" list="cats"></div>
+      </div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-expense')">Cancelar</button><button class="btn primary">Salvar</button></div>
+  </form>
+</dialog>
+
+<datalist id="cats">
+  {{range .Categories}}<option value="{{.}}">{{end}}
+</datalist>
+{{end}}
