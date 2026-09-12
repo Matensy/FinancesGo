@@ -38,12 +38,15 @@ func (a *App) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		proj, _ := c.finance.Projection()
 		stats, _ := c.store.PokemonStats(year, month)
 
-		incomes, _ := c.store.ListIncomesForMonth(year, month, "")
+		incomes, _ := c.store.ListBankIncomesForMonth(year, month, "")
 		expenses, _ := c.store.ListExpensesForMonth(year, month, "")
 		paidBills, _ := c.store.PaidBillsForMonth(year, month)
 
 		var incomeTotal, expenseTotal float64
 		for _, in := range incomes {
+			if in.Voided {
+				continue
+			}
 			incomeTotal += in.Amount
 		}
 		for _, e := range expenses {
@@ -70,9 +73,14 @@ func (a *App) handleDashboard(w http.ResponseWriter, r *http.Request) {
 			outflow[i] = f.Outflow
 		}
 
+		wallet, _ := c.store.GGMAXWalletState(now)
+		rec, _ := c.finance.Recommend()
+
 		data["Balance"] = balance
 		data["Projection"] = proj
 		data["Stats"] = stats
+		data["Wallet"] = wallet
+		data["Rec"] = rec
 		data["IncomeTotal"] = incomeTotal
 		data["ExpenseTotal"] = expenseTotal
 		data["PaidBills"] = paidBills
@@ -95,11 +103,13 @@ func (a *App) handleFinance(w http.ResponseWriter, r *http.Request) {
 		bills, _ := c.store.BillsForPeriod(year, month, category)
 		billDefs, _ := c.store.ListBills()
 		recurring, _ := c.store.ListRecurringIncomes()
-		incomes, _ := c.store.ListIncomesForMonth(year, month, category)
+		incomes, _ := c.store.ListBankIncomesForMonth(year, month, category)
 		expenses, _ := c.store.ListExpensesForMonth(year, month, category)
 		categories, _ := c.store.AllCategories()
 		proj, _ := c.finance.Projection()
 		balance, _ := c.finance.Balance()
+		wallet, _ := c.store.GGMAXWalletState(time.Now())
+		ggmaxSales, _ := c.store.ListGGMAXSales()
 
 		var billsTotal, billsPaid, incomeTotal, expenseTotal float64
 		for _, b := range bills {
@@ -130,6 +140,8 @@ func (a *App) handleFinance(w http.ResponseWriter, r *http.Request) {
 		data["Period"] = period
 		data["Category"] = category
 		data["MonthOptions"] = monthOptions(6)
+		data["Wallet"] = wallet
+		data["GGMAXSales"] = ggmaxSales
 	})
 	data["Period"] = period
 	a.render(w, "finance.html", data)
@@ -204,7 +216,14 @@ func (a *App) handleReport(w http.ResponseWriter, r *http.Request) {
 
 		var incomeTotal, expenseTotal, pokemonIncome float64
 		for _, in := range incomes {
-			incomeTotal += in.Amount
+			if in.Voided {
+				continue
+			}
+			// Raw GGMAX sales are platform money, not bank income; the bank
+			// income is the withdrawal. Count earnings under pokemonIncome only.
+			if in.Source != "ggmax" {
+				incomeTotal += in.Amount
+			}
 			if in.Source == "pokemon" || in.Source == "ggmax" {
 				pokemonIncome += in.Amount
 			}

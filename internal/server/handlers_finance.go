@@ -174,3 +174,27 @@ func (a *App) handleExpenseDelete(w http.ResponseWriter, r *http.Request) {
 	a.withCore(func(c *core) { _ = c.store.DeleteExpense(id) })
 	redirectBack(w, r, "/financeiro")
 }
+
+// --- GGMAX wallet ---
+
+// handleGGMAXVoid toggles the refunded/void state of a GGMAX sale.
+func (a *App) handleGGMAXVoid(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(r)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	void := r.FormValue("void") != "0"
+	a.withCore(func(c *core) { _ = c.store.SetIncomeVoided(id, void) })
+	redirectBack(w, r, "/financeiro")
+}
+
+// handleGGMAXWithdraw registers money moved from GGMAX to the bank.
+func (a *App) handleGGMAXWithdraw(w http.ResponseWriter, r *http.Request) {
+	amount := parseMoney(r.FormValue("amount"))
+	date := parseDate(r.FormValue("date"))
+	if amount > 0 {
+		a.withCore(func(c *core) { _, _ = c.store.RegisterGGMAXWithdrawal(amount, date) })
+	}
+	redirectBack(w, r, "/financeiro")
+}

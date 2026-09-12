@@ -127,6 +127,79 @@ func (e *Engine) Projection() (models.Projection, error) {
 	return proj, nil
 }
 
+// Recommendation holds the "how much can I spend / am I on track" figures.
+type Recommendation struct {
+	Balance       float64
+	Goal          float64
+	DaysLeft      int
+	IncomeToCome  float64 // confirmed bank income still to arrive this month
+	BillsToCome   float64 // unpaid bills due through end of month
+	CardDue       float64 // amount owed on the credit card
+	ProjectedEnd  float64 // projected balance at month end after obligations
+	FreeThisMonth float64 // discretionary amount and still hit the goal
+	DailyBudget   float64 // FreeThisMonth / DaysLeft
+	InRed         bool    // projected end below zero
+	RedAmount     float64
+	BelowGoal     bool    // projected end below the goal
+	GoalGap       float64 // how much is missing to reach the goal
+	HasGoal       bool
+}
+
+func lastDayOfMonth(t time.Time) int {
+	return time.Date(t.Year(), t.Month()+1, 0, 0, 0, 0, 0, t.Location()).Day()
+}
+
+// Recommend computes spending recommendations for the current month.
+func (e *Engine) Recommend() (Recommendation, error) {
+	var rec Recommendation
+	cfg, err := e.store.Settings()
+	if err != nil {
+		return rec, err
+	}
+	balance, err := e.Balance()
+	if err != nil {
+		return rec, err
+	}
+	today := startOfDay(time.Now())
+	monthEnd := time.Date(today.Year(), today.Month(), lastDayOfMonth(today), 0, 0, 0, 0, today.Location())
+
+	income, err := e.store.FutureConfirmedIncome(today, monthEnd)
+	if err != nil {
+		return rec, err
+	}
+	bills, _, err := e.store.UnpaidBillsDueBy(startOfMonth(today), monthEnd)
+	if err != nil {
+		return rec, err
+	}
+
+	rec.Balance = balance
+	rec.Goal = cfg.MonthlyGoal
+	rec.HasGoal = cfg.MonthlyGoal > 0
+	rec.DaysLeft = lastDayOfMonth(today) - today.Day() + 1
+	if rec.DaysLeft < 1 {
+		rec.DaysLeft = 1
+	}
+	rec.IncomeToCome = round2(income)
+	rec.BillsToCome = round2(bills)
+	rec.CardDue = round2(cfg.CardUsed)
+
+	rec.ProjectedEnd = round2(balance + income - bills - cfg.CardUsed)
+	rec.FreeThisMonth = round2(rec.ProjectedEnd - cfg.MonthlyGoal)
+	rec.DailyBudget = round2(rec.FreeThisMonth / float64(rec.DaysLeft))
+	if rec.DailyBudget < 0 {
+		rec.DailyBudget = 0
+	}
+	if rec.ProjectedEnd < 0 {
+		rec.InRed = true
+		rec.RedAmount = round2(-rec.ProjectedEnd)
+	}
+	if rec.HasGoal && rec.ProjectedEnd < cfg.MonthlyGoal {
+		rec.BelowGoal = true
+		rec.GoalGap = round2(cfg.MonthlyGoal - rec.ProjectedEnd)
+	}
+	return rec, nil
+}
+
 // SimulateSale returns the balance impact if an account with the given final
 // price were to sell and mature now: the current balance plus that value.
 func (e *Engine) SimulateSale(finalPrice float64) (current, projected float64, err error) {

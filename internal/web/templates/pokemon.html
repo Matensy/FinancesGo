@@ -202,7 +202,10 @@
   <div class="field"><label>Qtd. Pokémons</label><input name="pokemon_count" type="number" min="0" placeholder="0"></div>
   <div class="field"><label>Capacidade da bag</label><input name="bag_capacity" type="number" min="0" placeholder="0"></div>
 </div>
-<div class="field"><label>Descrição</label><textarea name="description" placeholder="Observações da conta..."></textarea></div>
+<div class="field">
+  <label style="display:flex;justify-content:space-between;align-items:center">Descrição <button type="button" class="btn sm ghost" onclick="formatDesc(this)" title="Cole a lista crua e formate no estilo GGMAX">Formatar GGMAX</button></label>
+  <textarea name="description" rows="6" placeholder="Cole a lista dos pokémons e clique em Formatar GGMAX. Ex:&#10;475/550 Pokemons&#10;109 Lendarios/53 Shinys&#10;Zacian Shiny/Latios Shiny/etc&#10;1,1KK de Stardust"></textarea>
+</div>
 <div class="field"><label>Tags (separadas por vírgula)</label><input name="tags" placeholder="full legendary, shiny hunter"></div>
 <div class="form-grid">
   <div class="field"><label>Valor base (R$)</label><input name="base_value" inputmode="decimal" placeholder="0,00"></div>

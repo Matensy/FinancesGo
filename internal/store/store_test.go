@@ -176,6 +176,61 @@ func TestProjectionDoesNotAccumulatePastBills(t *testing.T) {
 	}
 }
 
+func TestGGMAXWalletSeparateFromBank(t *testing.T) {
+	s := newStore(t)
+	_ = s.UpdateFinanceSettings(100, 0.1598, "R$", 7, 3)
+	eng := finance.New(s)
+	now := time.Now()
+
+	// A released GGMAX sale (dated in the past) and a pending one (future).
+	released := "ggmax:1"
+	pending := "ggmax:2"
+	if _, err := s.CreateIncome(models.Income{Description: "Venda GGMAX #A", Amount: 200, Date: now.AddDate(0, 0, -2), Category: "Venda Pokémon GO", Confirmed: true, Source: "ggmax", ExternalID: released}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreateIncome(models.Income{Description: "Venda GGMAX #B", Amount: 300, Date: now.AddDate(0, 0, 5), Category: "Venda Pokémon GO", Confirmed: true, Source: "ggmax", ExternalID: pending}); err != nil {
+		t.Fatal(err)
+	}
+
+	// GGMAX money must NOT be in the bank balance.
+	if bal, _ := eng.Balance(); bal != 100 {
+		t.Fatalf("bank balance = %.2f, want 100 (GGMAX excluded)", bal)
+	}
+	w, err := s.GGMAXWalletState(now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w.Available != 200 || w.Pending != 300 {
+		t.Fatalf("wallet available=%.2f pending=%.2f, want 200/300", w.Available, w.Pending)
+	}
+
+	// Withdrawing 150 moves it to the bank and reduces GGMAX available.
+	if _, err := s.RegisterGGMAXWithdrawal(150, now); err != nil {
+		t.Fatal(err)
+	}
+	if bal, _ := eng.Balance(); bal != 250 {
+		t.Fatalf("bank after withdrawal = %.2f, want 250", bal)
+	}
+	if w, _ := s.GGMAXWalletState(now); w.Available != 50 {
+		t.Fatalf("available after withdrawal = %.2f, want 50", w.Available)
+	}
+
+	// Refunding (voiding) the released sale removes it from the wallet.
+	sales, _ := s.ListGGMAXSales()
+	var relID int64
+	for _, sale := range sales {
+		if sale.ExternalID == released {
+			relID = sale.ID
+		}
+	}
+	if err := s.SetIncomeVoided(relID, true); err != nil {
+		t.Fatal(err)
+	}
+	if w, _ := s.GGMAXWalletState(now); w.Refunded != 200 {
+		t.Fatalf("refunded = %.2f, want 200", w.Refunded)
+	}
+}
+
 func TestGGMaxPriceCalculation(t *testing.T) {
 	p := models.PokemonAccount{BaseValue: 100, GGMaxRate: 0.1598}
 	if got := p.FinalPrice(); got != 115.98 {

@@ -50,6 +50,44 @@
   </div>
 </div>
 
+<div class="grid cols-3 mb">
+  <div class="card">
+    <div class="card-head"><div><h2 class="card-title">Recomendação de gasto</h2><div class="card-sub">Para fechar o mês no azul{{if .Rec.HasGoal}} e bater a meta{{end}}</div></div></div>
+    <div class="stat-value" style="font-size:26px">{{money .Rec.DailyBudget}}<span class="muted" style="font-size:13px;font-weight:500"> /dia</span></div>
+    <div class="stat-foot mb">Projeção fim do mês: <span class="strong">{{money .Rec.ProjectedEnd}}</span> · {{.Rec.DaysLeft}} dia(s) restantes</div>
+    {{if .Rec.InRed}}
+      <div class="note danger sm">{{icon "alert"}}<div>No vermelho: <b>{{money .Rec.RedAmount}}</b>. Reduza gastos ou saque do GGMAX.</div></div>
+    {{else if .Rec.BelowGoal}}
+      <div class="note warn sm">{{icon "alert"}}<div>Faltam <b>{{money .Rec.GoalGap}}</b> para a meta de {{money .Rec.Goal}}.</div></div>
+    {{else if .Rec.HasGoal}}
+      <div class="note ok sm">{{icon "check"}}<div>No caminho para a meta de {{money .Rec.Goal}}.</div></div>
+    {{else}}
+      <div class="note info sm">{{icon "info"}}<div>Defina uma meta mensal em Configurações para acompanhar.</div></div>
+    {{end}}
+    <div class="stat-foot">A receber {{money .Rec.IncomeToCome}} · Contas {{money .Rec.BillsToCome}}{{if gt .Rec.CardDue 0.0}} · Cartão {{money .Rec.CardDue}}{{end}}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div><h2 class="card-title">Carteira GGMAX</h2><div class="card-sub">Fora do saldo até você sacar</div></div><span class="chip p">{{icon "game"}}</span></div>
+    <div class="stat-label">Disponível para sacar</div>
+    <div class="stat-value sm">{{money .Wallet.Available}}</div>
+    <div class="stat-foot mb">À liberar: <span class="warn">{{money .Wallet.Pending}}</span></div>
+    <a href="/financeiro#ggmax" class="btn sm block">{{icon "wallet"}} Gerenciar / registrar saque</a>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div><h2 class="card-title">Cartão de crédito</h2><div class="card-sub">Fatura vence dia {{.Cfg.CardDueDay}}</div></div><span class="chip b">{{icon "dollar"}}</span></div>
+    {{if gt .Cfg.CardLimit 0.0}}
+    <div class="stat-label">Disponível no cartão</div>
+    <div class="stat-value sm">{{money .Cfg.CardAvailable}}</div>
+    <div class="bag-bar mt" style="height:7px"><span style="width:{{.Cfg.CardUsedPct}}%"></span></div>
+    <div class="stat-foot mt">Usado {{money .Cfg.CardUsed}} de {{money .Cfg.CardLimit}} ({{.Cfg.CardUsedPct}}%)</div>
+    {{else}}
+    <div class="empty small">{{icon "dollar"}}<div>Configure o limite do cartão em Configurações.</div></div>
+    {{end}}
+  </div>
+</div>
+
 <div class="grid cols-2 mb">
   <div class="card">
     <div class="card-head"><div><h2 class="card-title">Quanto posso gastar</h2><div class="card-sub">Projeção considerando receitas e contas a pagar</div></div></div>

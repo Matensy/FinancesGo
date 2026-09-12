@@ -49,6 +49,19 @@
   </div>
 </div>
 
+<div class="card mb">
+  <div class="card-head"><div><h2 class="card-title">Cartão de crédito e meta mensal</h2><div class="card-sub">Usado nas recomendações de gasto do dashboard</div></div></div>
+  <form method="post" action="/settings/card">
+    <div class="form-grid">
+      <div class="field"><label>Limite do cartão (R$)</label><input name="card_limit" inputmode="decimal" value="{{num .Cfg.CardLimit}}"></div>
+      <div class="field"><label>Usado no crédito (fatura atual)</label><input name="card_used" inputmode="decimal" value="{{num .Cfg.CardUsed}}"></div>
+      <div class="field"><label>Dia de vencimento da fatura</label><input name="card_due_day" type="number" min="1" max="31" value="{{.Cfg.CardDueDay}}"></div>
+      <div class="field"><label>Meta de saldo no fim do mês (R$)</label><input name="monthly_goal" inputmode="decimal" value="{{num .Cfg.MonthlyGoal}}" placeholder="5000,00"></div>
+    </div>
+    <button class="btn primary">{{icon "check"}} Salvar cartão e meta</button>
+  </form>
+</div>
+
 <div class="grid cols-2 mb">
   <div class="card">
     <div class="card-head"><div><h2 class="card-title">Backup do banco</h2><div class="card-sub">Trocar de PC ou restaurar</div></div></div>

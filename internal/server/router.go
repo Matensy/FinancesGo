@@ -72,6 +72,11 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /backup/import", a.requireAuth(a.handleBackupImport))
 	mux.HandleFunc("POST /settings/finance", a.requireAuth(a.handleSettingsFinance))
 	mux.HandleFunc("POST /settings/password", a.requireAuth(a.handleSettingsPassword))
+	mux.HandleFunc("POST /settings/card", a.requireAuth(a.handleSettingsCard))
+
+	// GGMAX wallet.
+	mux.HandleFunc("POST /ggmax/{id}/void", a.requireAuth(a.handleGGMAXVoid))
+	mux.HandleFunc("POST /ggmax/withdraw", a.requireAuth(a.handleGGMAXWithdraw))
 
 	return logRequests(mux)
 }

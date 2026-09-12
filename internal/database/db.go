@@ -43,6 +43,11 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 	}
+	if !hasColumn(db, "incomes", "voided") {
+		if _, err := db.Exec(`ALTER TABLE incomes ADD COLUMN voided INTEGER NOT NULL DEFAULT 0`); err != nil {
+			return err
+		}
+	}
 	_, err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_incomes_external
 		ON incomes(external_id) WHERE external_id IS NOT NULL`)
 	return err

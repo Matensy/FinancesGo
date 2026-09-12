@@ -32,6 +32,35 @@ type Settings struct {
 	SaleHoldDays   int  // days before a sale matures into the balance (default 7)
 	BillAlertDays  int  // how many days ahead to alert about upcoming bills
 	HasPassword    bool // whether a local password is configured
+
+	CardLimit   float64 // credit card total limit
+	CardUsed    float64 // amount currently used on the card (fatura)
+	CardDueDay  int     // day of month the card bill is due (default 5)
+	MonthlyGoal float64 // desired balance at the end of each month
+}
+
+// CardAvailable returns the remaining credit card limit.
+func (s Settings) CardAvailable() float64 {
+	v := s.CardLimit - s.CardUsed
+	if v < 0 {
+		return 0
+	}
+	return v
+}
+
+// CardUsedPct returns how much of the limit is used (0..100).
+func (s Settings) CardUsedPct() int {
+	if s.CardLimit <= 0 {
+		return 0
+	}
+	p := int(s.CardUsed / s.CardLimit * 100)
+	if p > 100 {
+		return 100
+	}
+	if p < 0 {
+		return 0
+	}
+	return p
 }
 
 // Bill is a recurring fixed monthly expense definition.
@@ -86,10 +115,11 @@ type Income struct {
 	Date        time.Time
 	Category    string
 	Confirmed   bool
-	Source      string // "manual" | "recurring" | "pokemon" | "ggmax"
+	Source      string // "manual" | "recurring" | "pokemon" | "ggmax" | "ggmax_withdraw"
 	PokemonID   *int64
 	Period      *string // set for materialized recurring incomes
 	ExternalID  string  // dedup key for imported entries (e.g. GGMAX tx id)
+	Voided      bool    // refunded/cancelled: counts nowhere
 	CreatedAt   time.Time
 }
 

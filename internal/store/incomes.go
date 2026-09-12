@@ -48,15 +48,16 @@ func scanIncomes(rows *sql.Rows) ([]models.Income, error) {
 	for rows.Next() {
 		var in models.Income
 		var date, created string
-		var confirmed int
+		var confirmed, voided int
 		var pokemonID sql.NullInt64
-		var period sql.NullString
+		var period, extID sql.NullString
 		if err := rows.Scan(&in.ID, &in.Description, &in.Amount, &date, &in.Category,
-			&confirmed, &in.Source, &pokemonID, &period, &created); err != nil {
+			&confirmed, &in.Source, &pokemonID, &period, &extID, &voided, &created); err != nil {
 			return nil, err
 		}
 		in.Date = parseTime(date)
 		in.Confirmed = confirmed == 1
+		in.Voided = voided == 1
 		if pokemonID.Valid {
 			id := pokemonID.Int64
 			in.PokemonID = &id
@@ -65,13 +66,21 @@ func scanIncomes(rows *sql.Rows) ([]models.Income, error) {
 			p := period.String
 			in.Period = &p
 		}
+		if extID.Valid {
+			in.ExternalID = extID.String
+		}
 		in.CreatedAt = parseTime(created)
 		out = append(out, in)
 	}
 	return out, rows.Err()
 }
 
-const incomeCols = `id, description, amount, date, category, confirmed, source, pokemon_account_id, period, created_at`
+const incomeCols = `id, description, amount, date, category, confirmed, source, pokemon_account_id, period, external_id, voided, created_at`
+
+// bankSources is the SQL fragment excluding money that lives on the GGMAX
+// platform (raw imported sales) from the real bank balance. Withdrawals
+// (ggmax_withdraw) DO count, because that money reached the bank.
+const notGGMAX = ` AND voided = 0 AND source <> 'ggmax'`
 
 // ListIncomesForMonth returns incomes dated within the given month.
 func (s *Store) ListIncomesForMonth(year int, month time.Month, category string) ([]models.Income, error) {
@@ -91,10 +100,28 @@ func (s *Store) ListIncomesForMonth(year int, month time.Month, category string)
 	return scanIncomes(rows)
 }
 
-// ConfirmedIncomeUpTo returns the sum of confirmed incomes dated on/before day.
+// ListBankIncomesForMonth returns incomes for the month excluding GGMAX
+// platform sales (which are shown in the GGMAX wallet, not the bank).
+func (s *Store) ListBankIncomesForMonth(year int, month time.Month, category string) ([]models.Income, error) {
+	all, err := s.ListIncomesForMonth(year, month, category)
+	if err != nil {
+		return nil, err
+	}
+	out := all[:0]
+	for _, in := range all {
+		if in.Source == "ggmax" {
+			continue
+		}
+		out = append(out, in)
+	}
+	return out, nil
+}
+
+// ConfirmedIncomeUpTo returns the sum of confirmed bank incomes dated on/before
+// day (GGMAX platform sales excluded; withdrawals included).
 func (s *Store) ConfirmedIncomeUpTo(day time.Time) (float64, error) {
 	var total sql.NullFloat64
-	err := s.db.QueryRow(`SELECT SUM(amount) FROM incomes WHERE confirmed = 1 AND date <= ?`,
+	err := s.db.QueryRow(`SELECT SUM(amount) FROM incomes WHERE confirmed = 1 AND date <= ?`+notGGMAX,
 		fmtDate(startOfDay(day))).Scan(&total)
 	if err != nil {
 		return 0, err
@@ -102,15 +129,91 @@ func (s *Store) ConfirmedIncomeUpTo(day time.Time) (float64, error) {
 	return total.Float64, nil
 }
 
-// FutureConfirmedIncome returns the sum of confirmed incomes with date in (from, until].
+// FutureConfirmedIncome returns the sum of confirmed bank incomes with date in
+// (from, until]. GGMAX platform sales are excluded — that money only reaches the
+// bank through a withdrawal.
 func (s *Store) FutureConfirmedIncome(from, until time.Time) (float64, error) {
 	var total sql.NullFloat64
-	err := s.db.QueryRow(`SELECT SUM(amount) FROM incomes WHERE confirmed = 1 AND date > ? AND date <= ?`,
+	err := s.db.QueryRow(`SELECT SUM(amount) FROM incomes WHERE confirmed = 1 AND date > ? AND date <= ?`+notGGMAX,
 		fmtDate(startOfDay(from)), fmtDate(startOfDay(until))).Scan(&total)
 	if err != nil {
 		return 0, err
 	}
 	return total.Float64, nil
+}
+
+// SetIncomeVoided marks an income as voided (refunded) or restores it.
+func (s *Store) SetIncomeVoided(id int64, voided bool) error {
+	_, err := s.db.Exec(`UPDATE incomes SET voided = ? WHERE id = ?`, boolToInt(voided), id)
+	return err
+}
+
+// GGMAXWallet holds the money currently held on the GGMAX platform.
+type GGMAXWallet struct {
+	Available float64 // released, not yet withdrawn to the bank
+	Pending   float64 // "a liberar": not released yet
+	Withdrawn float64 // total already moved to the bank
+	Refunded  float64 // total voided (refunds/problems)
+}
+
+// GGMAXWalletState computes the current GGMAX balances as of "on".
+func (s *Store) GGMAXWalletState(on time.Time) (GGMAXWallet, error) {
+	var w GGMAXWallet
+	today := fmtDate(startOfDay(on))
+
+	scan := func(q string, args ...any) (float64, error) {
+		var v sql.NullFloat64
+		if err := s.db.QueryRow(q, args...).Scan(&v); err != nil {
+			return 0, err
+		}
+		return v.Float64, nil
+	}
+	released, err := scan(`SELECT SUM(amount) FROM incomes WHERE source='ggmax' AND voided=0 AND date <= ?`, today)
+	if err != nil {
+		return w, err
+	}
+	pending, err := scan(`SELECT SUM(amount) FROM incomes WHERE source='ggmax' AND voided=0 AND date > ?`, today)
+	if err != nil {
+		return w, err
+	}
+	withdrawn, err := scan(`SELECT SUM(amount) FROM incomes WHERE source='ggmax_withdraw' AND voided=0`)
+	if err != nil {
+		return w, err
+	}
+	refunded, err := scan(`SELECT SUM(amount) FROM incomes WHERE source='ggmax' AND voided=1`)
+	if err != nil {
+		return w, err
+	}
+	w.Pending = pending
+	w.Withdrawn = withdrawn
+	w.Refunded = refunded
+	w.Available = released - withdrawn
+	if w.Available < 0 {
+		w.Available = 0
+	}
+	return w, nil
+}
+
+// ListGGMAXSales returns imported GGMAX sales (source='ggmax'), newest first.
+func (s *Store) ListGGMAXSales() ([]models.Income, error) {
+	rows, err := s.db.Query(`SELECT ` + incomeCols + ` FROM incomes WHERE source='ggmax' ORDER BY date DESC, id DESC`)
+	if err != nil {
+		return nil, err
+	}
+	return scanIncomes(rows)
+}
+
+// RegisterGGMAXWithdrawal records money moved from GGMAX to the bank: it counts
+// in the bank balance and reduces the GGMAX available balance.
+func (s *Store) RegisterGGMAXWithdrawal(amount float64, date time.Time) (int64, error) {
+	return s.CreateIncome(models.Income{
+		Description: "Saque GGMAX",
+		Amount:      amount,
+		Date:        date,
+		Category:    "Saque GGMAX",
+		Confirmed:   true,
+		Source:      "ggmax_withdraw",
+	})
 }
 
 // --- Recurring incomes ---

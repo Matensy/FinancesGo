@@ -42,7 +42,10 @@ func parseTime(s string) time.Time {
 		dateLayout,
 	}
 	for _, l := range layouts {
-		if t, err := time.Parse(l, s); err == nil {
+		// ParseInLocation interprets layouts without a timezone (our date and
+		// datetime formats) in local time, so a date like "2026-09-12" stays on
+		// the 12th instead of shifting a day back in negative timezones.
+		if t, err := time.ParseInLocation(l, s, time.Local); err == nil {
 			return t.Local()
 		}
 	}

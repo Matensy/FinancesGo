@@ -174,6 +174,17 @@ func (a *App) handleSettingsFinance(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/configuracoes?saved=1&msg="+url.QueryEscape("Configurações salvas"), http.StatusSeeOther)
 }
 
+func (a *App) handleSettingsCard(w http.ResponseWriter, r *http.Request) {
+	limit := parseMoney(r.FormValue("card_limit"))
+	used := parseMoney(r.FormValue("card_used"))
+	dueDay := parseIntField(r.FormValue("card_due_day"))
+	goal := parseMoney(r.FormValue("monthly_goal"))
+	a.withCore(func(c *core) {
+		_ = c.store.UpdateCardGoalSettings(limit, used, dueDay, goal)
+	})
+	http.Redirect(w, r, "/configuracoes?saved=1&msg="+url.QueryEscape("Cartão e meta salvos"), http.StatusSeeOther)
+}
+
 func (a *App) handleSettingsPassword(w http.ResponseWriter, r *http.Request) {
 	action := r.FormValue("action")
 	if action == "remove" {

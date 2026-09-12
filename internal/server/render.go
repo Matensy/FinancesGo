@@ -42,6 +42,15 @@ var funcMap = template.FuncMap{
 	"derefTime": derefTime,
 	"initials":  initials,
 	"icon":      iconSVG,
+	"reached":   dateReached,
+}
+
+// dateReached reports whether t is today or in the past (local day).
+func dateReached(t time.Time) bool {
+	now := time.Now()
+	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	return !d.After(today)
 }
 
 // iconSVG renders an inline SVG icon by name, referencing the sprite defined in

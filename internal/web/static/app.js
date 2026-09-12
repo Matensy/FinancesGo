@@ -185,5 +185,84 @@
     }
   });
 
+  /* GGMAX-style description formatter ------------------------------------- */
+  const TEAMS = {
+    valor: { emoji: "🟥", name: "Team Red" },
+    mystic: { emoji: "🟦", name: "Team Blue" },
+    instinct: { emoji: "🟨", name: "Team Yellow" }
+  };
+
+  function titleWord(w) {
+    if (/[0-9%]/.test(w)) return w; // keep "100%", "1,1KK"
+    return w.split("-").map((p) => (p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : p)).join("-");
+  }
+
+  function formatName(seg) {
+    seg = seg.trim();
+    if (!seg) return "";
+    if (/^etc\.?$/i.test(seg)) return "etc.";
+    let paren = "";
+    const m = seg.match(/\(([^)]*)\)/);
+    if (m) {
+      paren = " (" + m[1].trim().toUpperCase() + ")";
+      seg = seg.replace(/\([^)]*\)/, "").trim();
+    }
+    const main = seg.split(/\s+/).filter(Boolean).map(titleWord).join(" ");
+    return (main + paren).trim();
+  }
+
+  function formatDescription(raw, level, team) {
+    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    let pokemons = "", counts = "", stardust = "";
+    const nameChunks = [];
+
+    lines.forEach((line) => {
+      const mPok = line.match(/(\d+)\s*\/\s*(\d+)\s*pok/i);
+      const mCount = line.match(/(\d+)\s*lend[aá]rios?\s*\/\s*(\d+)\s*shinys?/i);
+      const isStar = /stardust/i.test(line) || /\d\s*kk\b/i.test(line);
+      if (mPok && !pokemons) {
+        pokemons = mPok[1] + "/" + mPok[2];
+      } else if (mCount && !counts) {
+        counts = mCount[1] + " Lendários / " + mCount[2] + " Shinys";
+      } else if (isStar && !stardust) {
+        stardust = line.replace(/\.$/, "").replace(/^de\s+/i, "").trim();
+        if (!/stardust/i.test(stardust)) stardust += " de Stardust";
+        // Normalize "1,1kk de stardust" -> "1,1KK de Stardust"
+        stardust = stardust.replace(/kk/gi, "KK").replace(/\bstardust\b/i, "Stardust").replace(/\bde\b/i, "de");
+      } else if (line.split("/").length >= 3) {
+        nameChunks.push(line);
+      }
+    });
+
+    const names = nameChunks.join("/").split("/").map(formatName).filter(Boolean);
+
+    const t = TEAMS[team] || null;
+    const out = [];
+    let header = "";
+    if (t) header += t.emoji + " ";
+    header += "Level " + (level || "?");
+    if (t) header += " (" + t.name + ")";
+    out.push(header);
+    if (pokemons) out.push("📦 " + pokemons + " Pokémons");
+    if (counts) out.push("⭐ " + counts);
+    if (stardust) out.push("✨ " + stardust);
+    if (names.length) {
+      out.push("");
+      out.push("🐉 Pokémons Lendários e Shinys");
+      out.push(names.join(", "));
+    }
+    return out.join("\n");
+  }
+
+  window.formatDesc = function (btn) {
+    const form = btn.closest("form");
+    if (!form) return;
+    const desc = form.querySelector('[name="description"]');
+    const level = (form.querySelector('[name="level"]') || {}).value || "";
+    const team = (form.querySelector('[name="team"]') || {}).value || "";
+    if (!desc) return;
+    desc.value = formatDescription(desc.value, level, team);
+  };
+
   document.addEventListener("DOMContentLoaded", initCharts);
 })();

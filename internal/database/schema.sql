@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS incomes (
     pokemon_account_id INTEGER REFERENCES pokemon_accounts(id) ON DELETE SET NULL,
     period             TEXT,
     external_id        TEXT,
+    voided             INTEGER NOT NULL DEFAULT 0,
     created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 -- NOTE: the unique index on external_id is created in migrate() (db.go), after

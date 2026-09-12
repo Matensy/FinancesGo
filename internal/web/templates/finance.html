@@ -24,6 +24,59 @@
   {{template "projection_timeline" .Projection}}
 </div>
 
+<div class="card mb" id="ggmax">
+  <div class="card-head">
+    <div><h2 class="card-title">Carteira GGMAX</h2><div class="card-sub">Dinheiro na plataforma — só entra no seu saldo quando você saca</div></div>
+    <button class="btn sm primary" onclick="openDialog('dlg-withdraw')">{{icon "download"}} Registrar saque</button>
+  </div>
+  <div class="grid cols-3 mb">
+    <div class="tl-item"><div class="lbl">Disponível para sacar</div><div class="amt">{{money .Wallet.Available}}</div></div>
+    <div class="tl-item"><div class="lbl">À liberar</div><div class="amt warn">{{money .Wallet.Pending}}</div></div>
+    <div class="tl-item"><div class="lbl">Sacado · Reembolsado</div><div class="amt" style="font-size:16px">{{money .Wallet.Withdrawn}} · {{money .Wallet.Refunded}}</div></div>
+  </div>
+  {{if .GGMAXSales}}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Venda</th><th>Data</th><th class="num">Valor</th><th>Status</th><th class="right">Ações</th></tr></thead>
+    <tbody>
+    {{range .GGMAXSales}}
+    <tr>
+      <td class="strong">{{.Description}}</td>
+      <td class="nowrap">{{date .Date}}</td>
+      <td class="num {{if .Voided}}muted{{else}}pos{{end}}">{{money .Amount}}</td>
+      <td>
+        {{if .Voided}}<span class="badge red">Reembolsada</span>
+        {{else if reached .Date}}<span class="badge green">Disponível</span>
+        {{else}}<span class="badge amber">A liberar {{date .Date}}</span>{{end}}
+      </td>
+      <td class="right">
+        {{if .Voided}}
+          <form method="post" action="/ggmax/{{.ID}}/void" style="display:inline"><input type="hidden" name="void" value="0"><input type="hidden" name="return" value="/financeiro#ggmax"><button class="btn sm ghost">Reativar</button></form>
+        {{else}}
+          <form method="post" action="/ggmax/{{.ID}}/void" style="display:inline"><input type="hidden" name="void" value="1"><input type="hidden" name="return" value="/financeiro#ggmax"><button class="btn sm danger">{{icon "refund"}} Reembolsar</button></form>
+        {{end}}
+      </td>
+    </tr>
+    {{end}}
+    </tbody>
+  </table></div>
+  {{else}}<div class="empty">{{icon "game"}}<div>Nenhuma venda GGMAX importada. Importe na aba Pokémon GO.</div></div>{{end}}
+</div>
+
+<dialog id="dlg-withdraw">
+  <form method="post" action="/ggmax/withdraw">
+    <input type="hidden" name="return" value="/financeiro#ggmax">
+    <div class="dialog-head"><h3>Registrar saque do GGMAX</h3><button type="button" class="close-x" onclick="closeDialog('dlg-withdraw')">{{icon "x"}}</button></div>
+    <div class="dialog-body">
+      <div class="note info sm">{{icon "info"}}<div>Informe quanto você transferiu do GGMAX para o seu banco. Esse valor <b>entra no seu saldo</b> e sai do disponível do GGMAX.</div></div>
+      <div class="form-grid">
+        <div class="field"><label>Valor sacado (R$)</label><input name="amount" inputmode="decimal" placeholder="0,00" required></div>
+        <div class="field"><label>Data</label><input name="date" type="date" value="{{today}}"></div>
+      </div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-withdraw')">Cancelar</button><button class="btn primary">Registrar saque</button></div>
+  </form>
+</dialog>
+
 <div class="filters">
   {{template "month_select" (dict "Options" .MonthOptions "Selected" .Period)}}
   <form method="get" class="field" style="margin:0">

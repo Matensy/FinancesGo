@@ -94,7 +94,10 @@
         <div class="field"><label>Qtd. Pokémons</label><input name="pokemon_count" type="number" value="{{$a.PokemonCount}}"></div>
         <div class="field"><label>Capacidade da bag</label><input name="bag_capacity" type="number" value="{{$a.BagCapacity}}"></div>
       </div>
-      <div class="field"><label>Descrição</label><textarea name="description">{{$a.Description}}</textarea></div>
+      <div class="field">
+        <label style="display:flex;justify-content:space-between;align-items:center">Descrição <button type="button" class="btn sm ghost" onclick="formatDesc(this)">Formatar GGMAX</button></label>
+        <textarea name="description" rows="6">{{$a.Description}}</textarea>
+      </div>
       <div class="field"><label>Tags</label><input name="tags" value="{{$a.Tags}}"></div>
       <div class="form-grid">
         <div class="field"><label>Valor base (R$)</label><input name="base_value" inputmode="decimal" value="{{num $a.BaseValue}}"></div>

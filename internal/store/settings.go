@@ -15,6 +15,10 @@ const (
 	keySaleHoldDays   = "sale_hold_days"
 	keyBillAlertDays  = "bill_alert_days"
 	keyPasswordHash   = "password_hash"
+	keyCardLimit      = "card_limit"
+	keyCardUsed       = "card_used"
+	keyCardDueDay     = "card_due_day"
+	keyMonthlyGoal    = "monthly_goal"
 )
 
 func (s *Store) getSetting(key string) (string, bool, error) {
@@ -45,6 +49,7 @@ func (s *Store) Settings() (models.Settings, error) {
 		Currency:       "R$",
 		SaleHoldDays:   7,
 		BillAlertDays:  3,
+		CardDueDay:     5,
 	}
 	rows, err := s.db.Query(`SELECT key, value FROM settings`)
 	if err != nil {
@@ -77,6 +82,16 @@ func (s *Store) Settings() (models.Settings, error) {
 			}
 		case keyPasswordHash:
 			cfg.HasPassword = v != ""
+		case keyCardLimit:
+			cfg.CardLimit, _ = strconv.ParseFloat(v, 64)
+		case keyCardUsed:
+			cfg.CardUsed, _ = strconv.ParseFloat(v, 64)
+		case keyCardDueDay:
+			if n, err := strconv.Atoi(v); err == nil && n > 0 {
+				cfg.CardDueDay = n
+			}
+		case keyMonthlyGoal:
+			cfg.MonthlyGoal, _ = strconv.ParseFloat(v, 64)
 		}
 	}
 	return cfg, rows.Err()
@@ -121,4 +136,23 @@ func (s *Store) UpdateFinanceSettings(initialBalance, ggmaxRate float64, currenc
 		return err
 	}
 	return tx.Commit()
+}
+
+// UpdateCardGoalSettings persists the credit-card and monthly-goal settings.
+func (s *Store) UpdateCardGoalSettings(cardLimit, cardUsed float64, cardDueDay int, goal float64) error {
+	if cardDueDay <= 0 {
+		cardDueDay = 5
+	}
+	pairs := map[string]string{
+		keyCardLimit:   strconv.FormatFloat(cardLimit, 'f', 2, 64),
+		keyCardUsed:    strconv.FormatFloat(cardUsed, 'f', 2, 64),
+		keyCardDueDay:  strconv.Itoa(cardDueDay),
+		keyMonthlyGoal: strconv.FormatFloat(goal, 'f', 2, 64),
+	}
+	for k, v := range pairs {
+		if err := s.SetSetting(k, v); err != nil {
+			return err
+		}
+	}
+	return nil
 }
