@@ -49,9 +49,8 @@ CREATE TABLE IF NOT EXISTS incomes (
     external_id        TEXT,
     created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_incomes_external
-    ON incomes(external_id) WHERE external_id IS NOT NULL;
+-- NOTE: the unique index on external_id is created in migrate() (db.go), after
+-- the column is guaranteed to exist on databases created by older versions.
 
 CREATE TABLE IF NOT EXISTS expenses (
     id                 INTEGER PRIMARY KEY AUTOINCREMENT,
