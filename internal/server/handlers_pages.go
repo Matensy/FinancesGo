@@ -294,6 +294,7 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		exports, _ := c.store.ListExportRecords()
 		data["Exports"] = exports
 		data["Backups"], _ = c.backup.List()
+		data["CurrentBalance"], _ = c.finance.Balance()
 	})
 	data["DataDir"] = a.cfg.DataDir
 	data["DBPath"] = a.cfg.DBPath

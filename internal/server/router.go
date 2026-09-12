@@ -143,7 +143,9 @@ func parseID(s string) (int64, bool) {
 	return id, true
 }
 
-// parseMoney parses money in either "1.234,56" (pt-BR) or "1234.56" formats.
+// parseMoney parses a money string in pt-BR ("1.234,56") or US ("1,234.56")
+// format. The decimal separator is taken to be whichever of '.' or ',' appears
+// last; the other is treated as a thousands separator and removed.
 func parseMoney(s string) float64 {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -151,9 +153,27 @@ func parseMoney(s string) float64 {
 	}
 	s = strings.ReplaceAll(s, "R$", "")
 	s = strings.TrimSpace(s)
-	// If it has both '.' and ',', assume '.' is thousands and ',' decimal.
-	if strings.Contains(s, ",") {
-		s = strings.ReplaceAll(s, ".", "")
+	// Keep only digits, separators and a leading sign.
+	s = strings.Map(func(r rune) rune {
+		if (r >= '0' && r <= '9') || r == '.' || r == ',' || r == '-' {
+			return r
+		}
+		return -1
+	}, s)
+	if s == "" {
+		return 0
+	}
+	lastDot := strings.LastIndex(s, ".")
+	lastComma := strings.LastIndex(s, ",")
+	switch {
+	case lastDot >= 0 && lastComma >= 0:
+		if lastComma > lastDot { // pt-BR: comma is decimal
+			s = strings.ReplaceAll(s, ".", "")
+			s = strings.ReplaceAll(s, ",", ".")
+		} else { // US: dot is decimal
+			s = strings.ReplaceAll(s, ",", "")
+		}
+	case lastComma >= 0: // only comma -> decimal
 		s = strings.ReplaceAll(s, ",", ".")
 	}
 	f, _ := strconv.ParseFloat(s, 64)

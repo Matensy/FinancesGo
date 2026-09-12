@@ -11,11 +11,12 @@
 
 <div class="grid cols-2 mb">
   <div class="card">
-    <div class="card-head"><div><h2 class="card-title">Finanças</h2><div class="card-sub">Defina aqui o seu saldo inicial</div></div></div>
+    <div class="card-head"><div><h2 class="card-title">Finanças</h2><div class="card-sub">Digite quanto você tem no banco AGORA</div></div></div>
     <form method="post" action="/settings/finance">
       <div class="field">
-        <label>Saldo inicial (R$)</label>
-        <input name="initial_balance" inputmode="decimal" value="{{num .Cfg.InitialBalance}}" placeholder="0,00">
+        <label>Saldo atual do banco (R$)</label>
+        <input name="initial_balance" inputmode="decimal" value="{{num .CurrentBalance}}" placeholder="0,00">
+        <div class="muted small mt" style="margin-top:6px">O app ajusta o saldo para exatamente este valor. Não inclui o dinheiro que está no GGMAX.</div>
       </div>
       <div class="form-grid">
         <div class="field"><label>Taxa GGMAX (%)</label><input name="ggmax_rate" inputmode="decimal" value="{{pctNum .Cfg.GGMaxRate}}"></div>

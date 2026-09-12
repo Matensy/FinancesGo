@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -151,7 +152,10 @@ func (a *App) handleImportGGMAX(w http.ResponseWriter, r *http.Request) {
 // --- Settings ---
 
 func (a *App) handleSettingsFinance(w http.ResponseWriter, r *http.Request) {
-	initial := parseMoney(r.FormValue("initial_balance"))
+	// The field holds the DESIRED current bank balance. We back-solve the stored
+	// initial balance so the displayed "Saldo total" equals exactly this value,
+	// regardless of the incomes/expenses/bills already recorded.
+	desired := parseMoney(r.FormValue("initial_balance"))
 	rate := parseMoney(r.FormValue("ggmax_rate"))
 	if rate > 1 {
 		rate = rate / 100
@@ -169,10 +173,16 @@ func (a *App) handleSettingsFinance(w http.ResponseWriter, r *http.Request) {
 		alert = 3
 	}
 	a.withCore(func(c *core) {
-		_ = c.store.UpdateFinanceSettings(initial, rate, currency, hold, alert)
+		cfg, _ := c.store.Settings()
+		bal, _ := c.finance.Balance()
+		adjustments := bal - cfg.InitialBalance // incomes - expenses - paid bills
+		newInitial := round2money(desired - adjustments)
+		_ = c.store.UpdateFinanceSettings(newInitial, rate, currency, hold, alert)
 	})
-	http.Redirect(w, r, "/configuracoes?saved=1&msg="+url.QueryEscape("Configurações salvas"), http.StatusSeeOther)
+	http.Redirect(w, r, "/configuracoes?saved=1&msg="+url.QueryEscape("Saldo e configurações salvos"), http.StatusSeeOther)
 }
+
+func round2money(v float64) float64 { return math.Round(v*100) / 100 }
 
 func (a *App) handleSettingsCard(w http.ResponseWriter, r *http.Request) {
 	limit := parseMoney(r.FormValue("card_limit"))
