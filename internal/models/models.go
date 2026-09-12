@@ -86,9 +86,10 @@ type Income struct {
 	Date        time.Time
 	Category    string
 	Confirmed   bool
-	Source      string // "manual" | "recurring" | "pokemon"
+	Source      string // "manual" | "recurring" | "pokemon" | "ggmax"
 	PokemonID   *int64
 	Period      *string // set for materialized recurring incomes
+	ExternalID  string  // dedup key for imported entries (e.g. GGMAX tx id)
 	CreatedAt   time.Time
 }
 

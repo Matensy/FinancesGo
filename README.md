@@ -27,6 +27,10 @@ Tudo em **um único binário**, com interface web em tema **preto + roxo**, roda
 - **Reembolso**: reverte a venda; se o valor já havia entrado, lança uma saída automática para manter o histórico rastreável.
 - **Simulador "e se eu vender agora?"** mostrando o impacto no saldo.
 - **Histórico de preço** por conta.
+- **Importar GGMAX**: cole a lista de transações do site e o app cadastra as
+  vendas automaticamente — as "Concluídas" entram no saldo na hora, as
+  "a liberar" entram sozinhas na data de liberação. Reimportar não duplica
+  (cada venda é identificada pelo ID da transação).
 
 ### Relatórios, exportação e backup
 - **Relatório mensal**: total vendido, ticket médio, contas com problema, gastos por categoria (gráfico), resultado do mês.

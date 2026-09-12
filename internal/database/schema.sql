@@ -46,8 +46,12 @@ CREATE TABLE IF NOT EXISTS incomes (
     source             TEXT NOT NULL DEFAULT 'manual',
     pokemon_account_id INTEGER REFERENCES pokemon_accounts(id) ON DELETE SET NULL,
     period             TEXT,
+    external_id        TEXT,
     created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_incomes_external
+    ON incomes(external_id) WHERE external_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS expenses (
     id                 INTEGER PRIMARY KEY AUTOINCREMENT,

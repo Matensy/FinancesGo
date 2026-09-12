@@ -29,5 +29,36 @@ func Open(path string) (*sql.DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("apply schema: %w", err)
 	}
+	if err := migrate(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("migrate: %w", err)
+	}
 	return db, nil
+}
+
+// migrate applies incremental changes to databases created by older versions.
+func migrate(db *sql.DB) error {
+	if !hasColumn(db, "incomes", "external_id") {
+		if _, err := db.Exec(`ALTER TABLE incomes ADD COLUMN external_id TEXT`); err != nil {
+			return err
+		}
+	}
+	_, err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_incomes_external
+		ON incomes(external_id) WHERE external_id IS NOT NULL`)
+	return err
+}
+
+func hasColumn(db *sql.DB, table, column string) bool {
+	rows, err := db.Query(`SELECT name FROM pragma_table_info(?)`, table)
+	if err != nil {
+		return false
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err == nil && name == column {
+			return true
+		}
+	}
+	return false
 }

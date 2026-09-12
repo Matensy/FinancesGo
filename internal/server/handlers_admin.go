@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/Matensy/FinancesGo/internal/backup"
+	"github.com/Matensy/FinancesGo/internal/ggmax"
+	"github.com/Matensy/FinancesGo/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -123,6 +125,27 @@ func (a *App) handleBackupImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/configuracoes?saved=1&msg="+url.QueryEscape("Banco importado com sucesso"), http.StatusSeeOther)
+}
+
+// --- GGMAX import ---
+
+func (a *App) handleImportGGMAX(w http.ResponseWriter, r *http.Request) {
+	raw := r.FormValue("data")
+	txs := ggmax.Parse(raw)
+	if len(txs) == 0 {
+		http.Redirect(w, r, "/pokemon?import_err="+url.QueryEscape("Nenhuma transação reconhecida no texto colado."), http.StatusSeeOther)
+		return
+	}
+	var res store.GGMAXImportResult
+	var err error
+	a.withCore(func(c *core) { res, err = c.store.ImportGGMAX(txs) })
+	if err != nil {
+		http.Redirect(w, r, "/pokemon?import_err="+url.QueryEscape("Falha ao importar: "+err.Error()), http.StatusSeeOther)
+		return
+	}
+	msg := fmt.Sprintf("%d venda(s) importada(s), %d já existente(s) ignorada(s). Liberado: R$ %.2f · A liberar: R$ %.2f",
+		res.Imported, res.Skipped, res.ReleasedValue, res.PendingValue)
+	http.Redirect(w, r, "/pokemon?import_msg="+url.QueryEscape(msg), http.StatusSeeOther)
 }
 
 // --- Settings ---

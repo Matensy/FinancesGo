@@ -59,6 +59,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /pokemon/{id}/sell", a.requireAuth(a.handlePokemonSell))
 	mux.HandleFunc("POST /pokemon/{id}/refund", a.requireAuth(a.handlePokemonRefund))
 	mux.HandleFunc("GET /pokemon/{id}/simulate", a.requireAuth(a.handlePokemonSimulate))
+	mux.HandleFunc("POST /import/ggmax", a.requireAuth(a.handleImportGGMAX))
 
 	// Export.
 	mux.HandleFunc("POST /export/xlsx", a.requireAuth(a.handleExportXLSX))

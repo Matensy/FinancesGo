@@ -358,7 +358,7 @@ func (s *Store) PokemonStats(year int, month time.Month) (PokemonStats, error) {
 	start := time.Date(year, month, 1, 0, 0, 0, 0, time.Local)
 	end := start.AddDate(0, 1, 0)
 	err = s.db.QueryRow(`SELECT SUM(amount) FROM incomes
-		WHERE source='pokemon' AND category='Venda Pokémon GO' AND date >= ? AND date < ?`,
+		WHERE source IN ('pokemon','ggmax') AND category='Venda Pokémon GO' AND date >= ? AND date < ?`,
 		fmtDate(start), fmtDate(end)).Scan(&sold)
 	if err != nil {
 		return st, err

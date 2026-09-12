@@ -4,8 +4,14 @@
     <h1>Pokémon GO</h1>
     <div class="breadcrumb">Catálogo de contas · taxa GGMAX aplicada automaticamente</div>
   </div>
-  <button class="btn primary" onclick="openDialog('dlg-create')">{{icon "plus"}} Nova conta</button>
+  <div class="btn-row">
+    <button class="btn" onclick="openDialog('dlg-import')">{{icon "upload"}} Importar GGMAX</button>
+    <button class="btn primary" onclick="openDialog('dlg-create')">{{icon "plus"}} Nova conta</button>
+  </div>
 </div>
+
+{{if .ImportMsg}}<div class="note ok">{{icon "check"}}<div>{{.ImportMsg}}</div></div>{{end}}
+{{if .ImportErr}}<div class="note danger">{{icon "alert"}}<div>{{.ImportErr}}</div></div>{{end}}
 
 <div class="grid cols-4 mb">
   <div class="stat-card"><div class="stat-top"><span class="chip p">{{icon "game"}}</span><span class="stat-label">Contas ativas</span></div><div class="stat-value sm">{{.Stats.Ativa}}</div><div class="stat-foot">{{.Stats.Anunciada}} anunciada(s)</div></div>
@@ -115,6 +121,17 @@
 {{end}}
 
 <div id="accounts-data" data-json="{{.AccountsJSON}}" hidden></div>
+
+<dialog id="dlg-import">
+  <form method="post" action="/import/ggmax">
+    <div class="dialog-head"><h3>Importar vendas do GGMAX</h3><button type="button" class="close-x" onclick="closeDialog('dlg-import')">{{icon "x"}}</button></div>
+    <div class="dialog-body">
+      <div class="note info sm">{{icon "info"}}<div>Cole a lista de transações do GGMAX. Vendas <b>Concluídas</b> entram no saldo agora; as <b>a liberar</b> entram automaticamente na data de liberação. Reimportar a mesma lista não duplica nada.</div></div>
+      <div class="field"><label>Transações (copie e cole do site)</label><textarea name="data" rows="10" placeholder="#15344660	11/09/26 23:23&#10;Pagamento #16109500, venda #J3EEL2E&#10;Libera em 18/09/26 23:23&#10;R$ 134,44&#10;a liberar&#10;—" style="min-height:200px;font-family:ui-monospace,monospace;font-size:12.5px"></textarea></div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-import')">Cancelar</button><button class="btn primary">{{icon "upload"}} Importar</button></div>
+  </form>
+</dialog>
 
 <dialog id="dlg-create">
   <form method="post" action="/pokemon" id="form-create">

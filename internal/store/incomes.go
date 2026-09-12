@@ -12,14 +12,21 @@ import (
 // CreateIncome inserts a concrete income entry.
 func (s *Store) CreateIncome(in models.Income) (int64, error) {
 	res, err := s.db.Exec(`INSERT INTO incomes
-		(description, amount, date, category, confirmed, source, pokemon_account_id, period)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		(description, amount, date, category, confirmed, source, pokemon_account_id, period, external_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		in.Description, in.Amount, fmtDate(in.Date), in.Category,
-		boolToInt(in.Confirmed), sourceOr(in.Source), in.PokemonID, in.Period)
+		boolToInt(in.Confirmed), sourceOr(in.Source), in.PokemonID, in.Period, nullStr(in.ExternalID))
 	if err != nil {
 		return 0, err
 	}
 	return res.LastInsertId()
+}
+
+func nullStr(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
 }
 
 // UpdateIncome updates an income entry.

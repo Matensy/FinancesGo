@@ -157,6 +157,8 @@ func (a *App) handlePokemonList(w http.ResponseWriter, r *http.Request) {
 		data["FilterTag"] = tag
 		data["DefaultRate"] = cfg.GGMaxRate
 	})
+	data["ImportMsg"] = r.URL.Query().Get("import_msg")
+	data["ImportErr"] = r.URL.Query().Get("import_err")
 	a.render(w, "pokemon.html", data)
 }
 
@@ -203,7 +205,7 @@ func (a *App) handleReport(w http.ResponseWriter, r *http.Request) {
 		var incomeTotal, expenseTotal, pokemonIncome float64
 		for _, in := range incomes {
 			incomeTotal += in.Amount
-			if in.Source == "pokemon" {
+			if in.Source == "pokemon" || in.Source == "ggmax" {
 				pokemonIncome += in.Amount
 			}
 		}

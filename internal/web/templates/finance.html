@@ -104,7 +104,7 @@
         <tbody>
           {{range .Incomes}}
           <tr>
-            <td><span class="strong">{{.Description}}</span> {{if eq .Source "pokemon"}}<span class="badge purple no-dot">Pokémon</span>{{else if eq .Source "recurring"}}<span class="badge blue no-dot">recorrente</span>{{end}}<div class="muted small">{{.Category}}</div></td>
+            <td><span class="strong">{{.Description}}</span> {{if eq .Source "pokemon"}}<span class="badge purple no-dot">Pokémon</span>{{else if eq .Source "ggmax"}}<span class="badge purple no-dot">GGMAX</span>{{else if eq .Source "recurring"}}<span class="badge blue no-dot">recorrente</span>{{end}}<div class="muted small">{{.Category}}</div></td>
             <td class="nowrap">{{date .Date}}</td>
             <td class="num pos">{{money .Amount}}</td>
             <td class="right">{{if eq .Source "manual"}}<form method="post" action="/incomes/{{.ID}}/delete" style="display:inline"><input type="hidden" name="return" value="/financeiro?mes={{$.Period}}"><button class="btn sm icon danger" title="Excluir">{{icon "trash"}}</button></form>{{end}}</td>
