@@ -1,85 +1,72 @@
 {{define "content"}}
 {{$a := .Account}}
-<div class="topbar">
+<div class="page-head">
   <div>
     <h1>{{if $a.Email}}{{$a.Email}}{{else}}Conta #{{$a.ID}}{{end}}</h1>
-    <div class="sub">
-      <span class="team-dot team-{{$a.Team}}-dot"></span> {{teamLabel $a.Team}} · Level {{$a.Level}} ·
-      <span class="badge {{statusCls $a.Status}}">{{statusLbl $a.Status}}</span>
-    </div>
+    <div class="breadcrumb"><span class="team-dot team-{{$a.Team}}-dot"></span>{{teamLabel $a.Team}} · Level {{$a.Level}} · <span class="badge {{statusCls $a.Status}}">{{statusLbl $a.Status}}</span></div>
   </div>
-  <a href="/pokemon" class="btn sm ghost">← Voltar</a>
+  <a href="/pokemon" class="btn sm ghost">{{icon "chevron"}} Voltar</a>
 </div>
 
 {{if and (eq $a.Status "problema") (nonEmpty $a.ProblemNote)}}
-<div class="alert danger">⚠️ Problema {{if $a.ProblemAt}}({{date (derefTime $a.ProblemAt)}}){{end}}: {{$a.ProblemNote}}</div>
+<div class="note danger">{{icon "alert"}}<div>Problema{{if $a.ProblemAt}} ({{date (derefTime $a.ProblemAt)}}){{end}}: {{$a.ProblemNote}}</div></div>
 {{end}}
 {{if eq $a.Status "vendida"}}
-<div class="alert info">
-  Vendida em {{date (derefTime $a.SoldAt)}} por {{money (deref $a.SoldValue)}}.
-  {{if $a.Matured}}✅ Já creditada ao saldo.{{else}}⏳ Libera automaticamente em {{date (derefTime $a.MaturesAt)}}.{{end}}
-</div>
+<div class="note {{if $a.Matured}}ok{{else}}info{{end}}">{{icon "clock"}}<div>Vendida em {{date (derefTime $a.SoldAt)}} por {{money (deref $a.SoldValue)}}. {{if $a.Matured}}Já creditada ao saldo.{{else}}Libera automaticamente em {{date (derefTime $a.MaturesAt)}}.{{end}}</div></div>
 {{end}}
 {{if eq $a.Status "reembolsada"}}
-<div class="alert danger">Reembolsada em {{date (derefTime $a.RefundedAt)}}. Motivo: {{if nonEmpty $a.RefundReason}}{{$a.RefundReason}}{{else}}—{{end}}</div>
+<div class="note danger">{{icon "refund"}}<div>Reembolsada em {{date (derefTime $a.RefundedAt)}}. Motivo: {{if nonEmpty $a.RefundReason}}{{$a.RefundReason}}{{else}}—{{end}}</div></div>
 {{end}}
 
 <div class="grid cols-3 mb">
-  <div class="card stat"><span class="label">Valor base</span><span class="value sm">{{money $a.BaseValue}}</span></div>
-  <div class="card stat"><span class="label">Taxa GGMAX ({{pct $a.GGMaxRate}})</span><span class="value sm">{{money $a.Fee}}</span></div>
-  <div class="card stat"><span class="label">Preço final de venda</span><span class="value sm" style="color:var(--purple-2)">{{money $a.FinalPrice}}</span></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip b">{{icon "dollar"}}</span><span class="stat-label">Valor base</span></div><div class="stat-value sm">{{money $a.BaseValue}}</div></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip a">{{icon "tag"}}</span><span class="stat-label">Taxa GGMAX ({{pct $a.GGMaxRate}})</span></div><div class="stat-value sm">{{money $a.Fee}}</div></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip p">{{icon "trend"}}</span><span class="stat-label">Preço final de venda</span></div><div class="stat-value sm" style="color:var(--primary-2)">{{money $a.FinalPrice}}</div></div>
 </div>
 
 <div class="grid cols-2 mb">
   <div class="card">
-    <h2>Detalhes</h2>
-    <div class="pc-stats" style="grid-template-columns:1fr 1fr;font-size:14px">
+    <div class="card-head"><h2 class="card-title">Detalhes</h2></div>
+    <div class="pc-stats" style="grid-template-columns:1fr 1fr;font-size:13.5px">
       <div><span class="k muted">Lendários:</span> {{if nonEmpty $a.Legendaries}}{{$a.Legendaries}}{{else}}—{{end}}</div>
       <div><span class="k muted">Shinys:</span> {{$a.Shinies}}</div>
       <div><span class="k muted">Pokémons:</span> {{$a.PokemonCount}} / {{$a.BagCapacity}}</div>
       <div><span class="k muted">Uso da bag:</span> {{bagPct $a.PokemonCount $a.BagCapacity}}%</div>
     </div>
-    {{if nonEmpty $a.Description}}<p class="muted mt">{{$a.Description}}</p>{{end}}
+    {{if nonEmpty $a.Description}}<p class="text-2 mt">{{$a.Description}}</p>{{end}}
     {{if $a.TagList}}<div class="mt">{{range $a.TagList}}<span class="tag">{{.}}</span>{{end}}</div>{{end}}
   </div>
 
   <div class="card">
-    <h2>Simulador — "e se eu vender agora?"</h2>
-    <p class="muted small">Veja o impacto desta venda no seu saldo.</p>
-    <div id="sim-result">
-      {{template "simulation" (dict "Current" .Balance "Projected" .ProjectedAfterSale "Gain" $a.FinalPrice)}}
-    </div>
-    <button class="btn primary mt" hx-get="/pokemon/{{$a.ID}}/simulate" hx-target="#sim-result" hx-swap="innerHTML">Recalcular com saldo atual</button>
+    <div class="card-head"><div><h2 class="card-title">Simulador de venda</h2><div class="card-sub">Impacto de vender esta conta agora</div></div></div>
+    <div id="sim-result">{{template "simulation" (dict "Current" .Balance "Projected" .ProjectedAfterSale "Gain" $a.FinalPrice)}}</div>
+    <button class="btn mt" hx-get="/pokemon/{{$a.ID}}/simulate" hx-target="#sim-result" hx-swap="innerHTML">{{icon "refund"}} Recalcular com saldo atual</button>
   </div>
 </div>
 
 <div class="card mb">
-  <h2>Ações</h2>
+  <div class="card-head"><h2 class="card-title">Ações</h2></div>
   <div class="btn-row">
-    <button class="btn" onclick="openDialog('dlg-edit')">✏️ Editar</button>
+    <button class="btn" onclick="openDialog('dlg-edit')">{{icon "edit"}} Editar</button>
     {{if or (eq $a.Status "ativa") (eq $a.Status "anunciada")}}
-      <button class="btn primary" onclick="openDialog('dlg-sell')">💸 Registrar venda</button>
-      <button class="btn danger" onclick="openDialog('dlg-problem')">⚠️ Marcar problema</button>
+      <button class="btn primary" onclick="openDialog('dlg-sell')">{{icon "tag"}} Registrar venda</button>
+      <button class="btn danger" onclick="openDialog('dlg-problem')">{{icon "alert"}} Marcar problema</button>
     {{else if eq $a.Status "vendida"}}
-      <button class="btn danger" onclick="openDialog('dlg-refund')">↩️ Reembolso</button>
+      <button class="btn danger" onclick="openDialog('dlg-refund')">{{icon "refund"}} Reembolso</button>
     {{else if eq $a.Status "problema"}}
-      <form method="post" action="/pokemon/{{$a.ID}}/problem"><button class="btn primary">✅ Resolver problema</button></form>
+      <form method="post" action="/pokemon/{{$a.ID}}/problem"><button class="btn primary">{{icon "check"}} Resolver problema</button></form>
     {{end}}
-    <form method="post" action="/pokemon/{{$a.ID}}/delete" onsubmit="return confirm('Excluir esta conta permanentemente?')"><button class="btn danger ghost">🗑 Excluir</button></form>
+    <form method="post" action="/pokemon/{{$a.ID}}/delete" onsubmit="return confirm('Excluir esta conta permanentemente?')"><button class="btn danger ghost">{{icon "trash"}} Excluir</button></form>
   </div>
 </div>
 
 {{if .History}}
 <div class="card">
-  <h2>Histórico de preço</h2>
+  <div class="card-head"><h2 class="card-title">Histórico de preço</h2></div>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Data</th><th class="num">Valor base</th><th class="num">Taxa</th><th class="num">Preço final</th></tr></thead>
-      <tbody>
-        {{range .History}}
-        <tr><td>{{datetime .RecordedAt}}</td><td class="num">{{money .BaseValue}}</td><td class="num">{{pct .GGMaxRate}}</td><td class="num">{{money .FinalPrice}}</td></tr>
-        {{end}}
-      </tbody>
+      <tbody>{{range .History}}<tr><td>{{datetime .RecordedAt}}</td><td class="num">{{money .BaseValue}}</td><td class="num">{{pct .GGMaxRate}}</td><td class="num strong">{{money .FinalPrice}}</td></tr>{{end}}</tbody>
     </table>
   </div>
 </div>
@@ -87,7 +74,7 @@
 
 <dialog id="dlg-edit">
   <form method="post" action="/pokemon/{{$a.ID}}/update">
-    <div class="dialog-head"><h3>Editar conta</h3><button type="button" class="close-x" onclick="closeDialog('dlg-edit')">×</button></div>
+    <div class="dialog-head"><h3>Editar conta</h3><button type="button" class="close-x" onclick="closeDialog('dlg-edit')">{{icon "x"}}</button></div>
     <div class="dialog-body">
       <div class="field"><label>Email</label><input name="email" value="{{$a.Email}}"></div>
       <div class="form-grid">
@@ -113,7 +100,7 @@
         <div class="field"><label>Valor base (R$)</label><input name="base_value" inputmode="decimal" value="{{num $a.BaseValue}}"></div>
         <div class="field"><label>Taxa GGMAX (%)</label><input name="ggmax_rate" inputmode="decimal" value="{{pctNum $a.GGMaxRate}}"></div>
       </div>
-      <div class="alert info small">Preço final: <b class="price-preview">{{money $a.FinalPrice}}</b></div>
+      <div class="note info sm">{{icon "info"}}<div>Preço final: <span class="strong price-preview">{{money $a.FinalPrice}}</span></div></div>
     </div>
     <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-edit')">Cancelar</button><button class="btn primary">Salvar</button></div>
   </form>
@@ -121,20 +108,18 @@
 
 <dialog id="dlg-sell">
   <form method="post" action="/pokemon/{{$a.ID}}/sell">
-    <div class="dialog-head"><h3>Registrar venda</h3><button type="button" class="close-x" onclick="closeDialog('dlg-sell')">×</button></div>
-    <div class="dialog-body">
-      <div class="form-grid">
-        <div class="field"><label>Valor da venda (R$)</label><input name="value" inputmode="decimal" value="{{num $a.FinalPrice}}"></div>
-        <div class="field"><label>Data da venda</label><input name="sold_at" type="date" value="{{today}}"></div>
-      </div>
-    </div>
+    <div class="dialog-head"><h3>Registrar venda</h3><button type="button" class="close-x" onclick="closeDialog('dlg-sell')">{{icon "x"}}</button></div>
+    <div class="dialog-body"><div class="form-grid">
+      <div class="field"><label>Valor da venda (R$)</label><input name="value" inputmode="decimal" value="{{num $a.FinalPrice}}"></div>
+      <div class="field"><label>Data da venda</label><input name="sold_at" type="date" value="{{today}}"></div>
+    </div></div>
     <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-sell')">Cancelar</button><button class="btn primary">Confirmar</button></div>
   </form>
 </dialog>
 
 <dialog id="dlg-problem">
   <form method="post" action="/pokemon/{{$a.ID}}/problem">
-    <div class="dialog-head"><h3 class="dlg-problem-title">Marcar problema</h3><button type="button" class="close-x" onclick="closeDialog('dlg-problem')">×</button></div>
+    <div class="dialog-head"><h3 class="dlg-problem-title">Marcar problema</h3><button type="button" class="close-x" onclick="closeDialog('dlg-problem')">{{icon "x"}}</button></div>
     <div class="dialog-body"><div class="field"><label>O que aconteceu?</label><textarea name="note"></textarea></div></div>
     <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-problem')">Cancelar</button><button class="btn danger">Confirmar</button></div>
   </form>
@@ -142,7 +127,7 @@
 
 <dialog id="dlg-refund">
   <form method="post" action="/pokemon/{{$a.ID}}/refund">
-    <div class="dialog-head"><h3>Registrar reembolso</h3><button type="button" class="close-x" onclick="closeDialog('dlg-refund')">×</button></div>
+    <div class="dialog-head"><h3>Registrar reembolso</h3><button type="button" class="close-x" onclick="closeDialog('dlg-refund')">{{icon "x"}}</button></div>
     <div class="dialog-body"><div class="field"><label>Motivo</label><textarea name="reason"></textarea></div></div>
     <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-refund')">Cancelar</button><button class="btn danger">Confirmar</button></div>
   </form>

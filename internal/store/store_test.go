@@ -155,6 +155,27 @@ func TestRecurringIncomeMaterialization(t *testing.T) {
 	}
 }
 
+func TestProjectionDoesNotAccumulatePastBills(t *testing.T) {
+	s := newStore(t)
+	_ = s.UpdateFinanceSettings(1000, 0.1598, "R$", 7, 3)
+	// A bill due on day 1 is always due by "today" in the current month.
+	if _, err := s.CreateBill(models.Bill{Name: "Aluguel", Amount: 100, DueDay: 1, Category: "Moradia", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	proj, err := finance.New(s).Projection()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// "Hoje" must subtract only the current month's unpaid bill (100), never a
+	// runaway accumulation of past months.
+	if proj.Today.Available != 900 {
+		t.Fatalf("today available = %.2f, want 900", proj.Today.Available)
+	}
+	if proj.Today.BillsDue != 100 {
+		t.Fatalf("today bills due = %.2f, want 100", proj.Today.BillsDue)
+	}
+}
+
 func TestGGMaxPriceCalculation(t *testing.T) {
 	p := models.PokemonAccount{BaseValue: 100, GGMaxRate: 0.1598}
 	if got := p.FinalPrice(); got != 115.98 {

@@ -5,37 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{.Title}} · FinancesGo</title>
   <link rel="stylesheet" href="/static/app.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💜</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c5cff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='22 7 13.5 15.5 8.5 10.5 2 17'/%3E%3Cpolyline points='16 7 22 7 22 13'/%3E%3C/svg%3E">
   <script src="/static/vendor/htmx.min.js" defer></script>
   <script src="/static/vendor/chart.min.js" defer></script>
   <script src="/static/app.js" defer></script>
 </head>
 <body>
+{{template "iconsprite" .}}
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-      <span class="logo">💜</span>
-      <span>FinancesGo<small>finanças + Pokémon GO</small></span>
+      <span class="mark">{{icon "brand"}}</span>
+      <span>FinancesGo</span>
     </div>
     <nav class="nav">
-      <a href="/" class="{{if eq .Section "dashboard"}}active{{end}}"><span class="ic">🏠</span><span class="txt">Dashboard</span></a>
-      <a href="/financeiro" class="{{if eq .Section "financeiro"}}active{{end}}"><span class="ic">💰</span><span class="txt">Financeiro</span></a>
-      <a href="/pokemon" class="{{if eq .Section "pokemon"}}active{{end}}"><span class="ic">🎮</span><span class="txt">Pokémon GO</span></a>
-      <a href="/relatorio" class="{{if eq .Section "relatorio"}}active{{end}}"><span class="ic">📊</span><span class="txt">Relatório</span></a>
-      <div class="nav-sep"></div>
-      <a href="/configuracoes" class="{{if eq .Section "configuracoes"}}active{{end}}"><span class="ic">⚙️</span><span class="txt">Configurações</span></a>
+      <a href="/" class="{{if eq .Section "dashboard"}}active{{end}}">{{icon "dashboard"}}<span class="txt">Dashboard</span></a>
+      <a href="/financeiro" class="{{if eq .Section "financeiro"}}active{{end}}">{{icon "wallet"}}<span class="txt">Financeiro</span></a>
+      <a href="/pokemon" class="{{if eq .Section "pokemon"}}active{{end}}">{{icon "game"}}<span class="txt">Pokémon GO</span></a>
+      <a href="/relatorio" class="{{if eq .Section "relatorio"}}active{{end}}">{{icon "report"}}<span class="txt">Relatório</span></a>
+      <div class="spacer"></div>
+      <a href="/configuracoes" class="{{if eq .Section "configuracoes"}}active{{end}}">{{icon "settings"}}<span class="txt">Configurações</span></a>
       {{if .Cfg.HasPassword}}
-      <form method="post" action="/logout" style="margin-top:4px">
-        <button class="nav-logout" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;color:var(--muted);font-weight:500;width:100%">
-          <span class="ic">🚪</span><span class="txt">Sair</span>
-        </button>
-      </form>
+      <form method="post" action="/logout"><button type="submit" class="nav-logout" style="all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--muted);font-weight:500;width:100%">{{icon "logout"}}<span class="txt">Sair</span></button></form>
       {{end}}
     </nav>
   </aside>
-  <main class="content">
-    {{block "content" .}}{{end}}
-  </main>
+  <div class="content">
+    <div class="topbar">
+      <div class="search">{{icon "search"}}<input type="search" placeholder="Buscar..." aria-label="Buscar"></div>
+      <div class="tb-actions">
+        <a class="icon-btn" href="/relatorio" title="Relatório">{{icon "report"}}</a>
+        <a class="icon-btn" href="/configuracoes" title="Configurações">{{icon "settings"}}</a>
+        <span class="avatar">FG</span>
+      </div>
+    </div>
+    <main class="page">
+      {{block "content" .}}{{end}}
+    </main>
+  </div>
 </div>
 {{block "page_scripts" .}}{{end}}
 </body>

@@ -1,14 +1,22 @@
 {{define "content"}}
-<div class="topbar"><div><h1>Configurações</h1><div class="sub">Saldo inicial, taxa GGMAX, segurança e backup</div></div></div>
+<div class="page-head">
+  <div>
+    <h1>Configurações</h1>
+    <div class="breadcrumb">Saldo inicial, taxa GGMAX, segurança e backup</div>
+  </div>
+</div>
 
-{{if .Saved}}<div class="alert ok">✅ {{if .Msg}}{{.Msg}}{{else}}Salvo com sucesso{{end}}</div>{{end}}
-{{if .Err}}<div class="alert danger">⚠️ {{.Err}}</div>{{end}}
+{{if .Saved}}<div class="note ok">{{icon "check"}}<div>{{if .Msg}}{{.Msg}}{{else}}Salvo com sucesso{{end}}</div></div>{{end}}
+{{if .Err}}<div class="note danger">{{icon "alert"}}<div>{{.Err}}</div></div>{{end}}
 
 <div class="grid cols-2 mb">
   <div class="card">
-    <h2>Finanças</h2>
+    <div class="card-head"><div><h2 class="card-title">Finanças</h2><div class="card-sub">Defina aqui o seu saldo inicial</div></div></div>
     <form method="post" action="/settings/finance">
-      <div class="field"><label>Saldo inicial (R$)</label><input name="initial_balance" inputmode="decimal" value="{{num .Cfg.InitialBalance}}"></div>
+      <div class="field">
+        <label>Saldo inicial (R$)</label>
+        <input name="initial_balance" inputmode="decimal" value="{{num .Cfg.InitialBalance}}" placeholder="0,00">
+      </div>
       <div class="form-grid">
         <div class="field"><label>Taxa GGMAX (%)</label><input name="ggmax_rate" inputmode="decimal" value="{{pctNum .Cfg.GGMaxRate}}"></div>
         <div class="field"><label>Moeda</label><input name="currency" value="{{.Cfg.Currency}}"></div>
@@ -17,16 +25,16 @@
         <div class="field"><label>Dias de espera da venda</label><input name="sale_hold_days" type="number" min="0" value="{{.Cfg.SaleHoldDays}}"></div>
         <div class="field"><label>Alerta de contas (dias antes)</label><input name="bill_alert_days" type="number" min="0" value="{{.Cfg.BillAlertDays}}"></div>
       </div>
-      <button class="btn primary block">Salvar configurações</button>
+      <button class="btn primary block">{{icon "check"}} Salvar configurações</button>
     </form>
   </div>
 
   <div class="card">
-    <h2>Segurança (senha local)</h2>
+    <div class="card-head"><div><h2 class="card-title">Segurança</h2><div class="card-sub">Senha local (opcional)</div></div></div>
     {{if .Cfg.HasPassword}}
-    <div class="alert info small">🔒 Senha ativa. O app pede senha ao abrir.</div>
+    <div class="note info sm">{{icon "lock"}}<div>Senha ativa. O app pede senha ao abrir.</div></div>
     {{else}}
-    <div class="alert warn small">Sem senha. Recomendado definir, pois são dados financeiros.</div>
+    <div class="note warn sm">{{icon "lock"}}<div>Sem senha. Recomendado definir, pois são dados financeiros.</div></div>
     {{end}}
     <form method="post" action="/settings/password">
       <div class="form-grid">
@@ -43,47 +51,39 @@
 
 <div class="grid cols-2 mb">
   <div class="card">
-    <h2>Backup do banco de dados</h2>
-    <p class="muted small">O banco é o arquivo <code>{{.DBPath}}</code>. Copie/importe para trocar de PC ou restaurar.</p>
+    <div class="card-head"><div><h2 class="card-title">Backup do banco</h2><div class="card-sub">Trocar de PC ou restaurar</div></div></div>
+    <p class="muted small">O banco é o arquivo <code>{{.DBPath}}</code>.</p>
     <div class="btn-row mb">
-      <form method="post" action="/backup/create"><button class="btn">Criar backup local</button></form>
-      <a class="btn primary" href="/backup/export">⬇ Exportar banco (.db)</a>
+      <form method="post" action="/backup/create"><button class="btn">{{icon "database"}} Criar backup local</button></form>
+      <a class="btn primary" href="/backup/export">{{icon "download"}} Exportar banco (.db)</a>
     </div>
     <form method="post" action="/backup/import" enctype="multipart/form-data" onsubmit="return confirm('Isto substitui TODO o banco atual pelo arquivo enviado. Um backup de segurança será criado antes. Continuar?')">
       <div class="field"><label>Importar banco (.db)</label><input type="file" name="dbfile" accept=".db" required></div>
-      <button class="btn">⬆ Importar e substituir</button>
+      <button class="btn">{{icon "upload"}} Importar e substituir</button>
     </form>
     {{if .Backups}}
     <div class="section-title">Backups locais</div>
-    <div class="table-wrap"><table><tbody>
-      {{range .Backups}}<tr><td>💾 {{.}}</td></tr>{{end}}
-    </tbody></table></div>
+    <div class="table-wrap"><table><tbody>{{range .Backups}}<tr><td>{{.}}</td></tr>{{end}}</tbody></table></div>
     {{end}}
   </div>
 
   <div class="card">
-    <h2>Exportações da planilha</h2>
+    <div class="card-head"><div><h2 class="card-title">Exportar contas</h2><div class="card-sub">Planilha de contas Pokémon GO</div></div></div>
     <div class="btn-row mb">
-      <form method="post" action="/export/xlsx"><button class="btn">⬇ Exportar contas (.xlsx)</button></form>
-      <form method="post" action="/export/csv"><button class="btn">⬇ Exportar contas (.csv)</button></form>
+      <form method="post" action="/export/xlsx"><button class="btn">{{icon "download"}} .xlsx</button></form>
+      <form method="post" action="/export/csv"><button class="btn">{{icon "download"}} .csv</button></form>
     </div>
     {{if .Exports}}
     <div class="table-wrap"><table>
       <thead><tr><th>Arquivo</th><th>Data</th><th class="right"></th></tr></thead>
-      <tbody>
-        {{range .Exports}}<tr><td>{{.Filename}}</td><td class="nowrap small muted">{{datetime .CreatedAt}}</td><td class="right"><a class="btn sm ghost" href="/export/download?name={{.Filename}}">Baixar</a></td></tr>{{end}}
-      </tbody>
+      <tbody>{{range .Exports}}<tr><td class="strong">{{.Filename}}</td><td class="nowrap muted small">{{datetime .CreatedAt}}</td><td class="right"><a class="btn sm ghost" href="/export/download?name={{.Filename}}">Baixar</a></td></tr>{{end}}</tbody>
     </table></div>
     {{else}}<div class="empty small">Nenhuma exportação ainda.</div>{{end}}
   </div>
 </div>
 
 <div class="card">
-  <h2>Sobre</h2>
-  <p class="muted small">
-    FinancesGo · aplicação local em Go + SQLite. Dados salvos em <code>{{.DataDir}}</code>.
-    Vendas de contas Pokémon GO entram no saldo automaticamente após {{.Cfg.SaleHoldDays}} dias.
-    Uma rotina interna processa isso diariamente.
-  </p>
+  <div class="card-head"><h2 class="card-title">Sobre</h2></div>
+  <p class="text-2 small">Aplicação local em Go + SQLite. Dados salvos em <code>{{.DataDir}}</code>. Vendas de contas Pokémon GO entram no saldo automaticamente após {{.Cfg.SaleHoldDays}} dias, processadas por uma rotina interna diária.</p>
 </div>
 {{end}}

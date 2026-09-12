@@ -1,26 +1,26 @@
 {{define "content"}}
-<div class="topbar">
+<div class="page-head">
   <div>
     <h1>Financeiro</h1>
-    <div class="sub">Contas fixas, receitas, gastos e projeção de saldo</div>
+    <div class="breadcrumb">Contas fixas, receitas e projeção de saldo</div>
   </div>
   <div class="btn-row">
-    <button class="btn sm" onclick="openDialog('dlg-bill')">+ Conta fixa</button>
-    <button class="btn sm" onclick="openDialog('dlg-recurring')">+ Receita recorrente</button>
-    <button class="btn sm" onclick="openDialog('dlg-income')">+ Receita avulsa</button>
-    <button class="btn sm primary" onclick="openDialog('dlg-expense')">+ Gasto avulso</button>
+    <button class="btn sm" onclick="openDialog('dlg-bill')">{{icon "plus"}} Conta fixa</button>
+    <button class="btn sm" onclick="openDialog('dlg-recurring')">{{icon "plus"}} Receita recorrente</button>
+    <button class="btn sm" onclick="openDialog('dlg-income')">{{icon "plus"}} Receita</button>
+    <button class="btn sm primary" onclick="openDialog('dlg-expense')">{{icon "plus"}} Gasto</button>
   </div>
 </div>
 
 <div class="grid cols-4 mb">
-  <div class="card stat"><span class="label">Saldo atual</span><span class="value sm">{{money .Balance}}</span></div>
-  <div class="card stat"><span class="label">Receitas do mês</span><span class="value sm pos">{{money .IncomeTotal}}</span></div>
-  <div class="card stat"><span class="label">Contas do mês</span><span class="value sm">{{money .BillsTotal}}</span><span class="hint">Pagas: {{money .BillsPaid}}</span></div>
-  <div class="card stat"><span class="label">Gastos avulsos</span><span class="value sm neg">{{money .ExpenseTotal}}</span></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip p">{{icon "wallet"}}</span><span class="stat-label">Saldo atual</span></div><div class="stat-value sm">{{money .Balance}}</div></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip g">{{icon "trend"}}</span><span class="stat-label">Receitas do mês</span></div><div class="stat-value sm pos">{{money .IncomeTotal}}</div></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip a">{{icon "calendar"}}</span><span class="stat-label">Contas do mês</span></div><div class="stat-value sm">{{money .BillsTotal}}</div><div class="stat-foot">Pagas: {{money .BillsPaid}}</div></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip r">{{icon "dollar"}}</span><span class="stat-label">Gastos avulsos</span></div><div class="stat-value sm neg">{{money .ExpenseTotal}}</div></div>
 </div>
 
 <div class="card mb">
-  <h2>Quanto posso gastar</h2>
+  <div class="card-head"><div><h2 class="card-title">Quanto posso gastar</h2><div class="card-sub">Hoje, amanhã, esta semana e até o próximo salário</div></div></div>
   {{template "projection_timeline" .Projection}}
 </div>
 
@@ -37,7 +37,7 @@
 </div>
 
 <div class="card mb">
-  <div class="card-head"><h2>Contas fixas — {{.Period}}</h2></div>
+  <div class="card-head"><h2 class="card-title">Contas fixas</h2><span class="muted small">{{.Period}}</span></div>
   {{if .Bills}}
   <div class="table-wrap">
     <table>
@@ -45,10 +45,10 @@
       <tbody>
         {{range .Bills}}
         <tr>
-          <td>{{.Name}}</td>
-          <td class="muted">{{.Category}}</td>
+          <td><span class="strong">{{.Name}}</span></td>
+          <td>{{.Category}}</td>
           <td class="nowrap">{{date .DueDate}}</td>
-          <td class="num">{{money .Amount}}</td>
+          <td class="num strong">{{money .Amount}}</td>
           <td>
             {{if eq .Status "paga"}}<span class="badge paga">Paga</span>
             {{else if eq .Status "atrasada"}}<span class="badge atrasada">Atrasada</span>
@@ -56,22 +56,11 @@
           </td>
           <td class="right nowrap">
             {{if .Paid}}
-            <form method="post" action="/bills/{{.ID}}/unpay" style="display:inline">
-              <input type="hidden" name="period" value="{{.Period}}">
-              <input type="hidden" name="return" value="/financeiro?mes={{$.Period}}">
-              <button class="btn sm ghost">Desmarcar</button>
-            </form>
+            <form method="post" action="/bills/{{.ID}}/unpay" style="display:inline"><input type="hidden" name="period" value="{{.Period}}"><input type="hidden" name="return" value="/financeiro?mes={{$.Period}}"><button class="btn sm ghost">Desmarcar</button></form>
             {{else}}
-            <form method="post" action="/bills/{{.ID}}/pay" style="display:inline">
-              <input type="hidden" name="period" value="{{.Period}}">
-              <input type="hidden" name="return" value="/financeiro?mes={{$.Period}}">
-              <button class="btn sm primary">Marcar paga</button>
-            </form>
+            <form method="post" action="/bills/{{.ID}}/pay" style="display:inline"><input type="hidden" name="period" value="{{.Period}}"><input type="hidden" name="return" value="/financeiro?mes={{$.Period}}"><button class="btn sm primary">{{icon "check"}} Pagar</button></form>
             {{end}}
-            <form method="post" action="/bills/{{.ID}}/delete" style="display:inline" onsubmit="return confirm('Excluir esta conta fixa?')">
-              <input type="hidden" name="return" value="/financeiro?mes={{$.Period}}">
-              <button class="btn sm danger">✕</button>
-            </form>
+            <form method="post" action="/bills/{{.ID}}/delete" style="display:inline" onsubmit="return confirm('Excluir esta conta fixa?')"><input type="hidden" name="return" value="/financeiro?mes={{$.Period}}"><button class="btn sm icon danger" title="Excluir">{{icon "trash"}}</button></form>
           </td>
         </tr>
         {{end}}
@@ -79,28 +68,24 @@
     </table>
   </div>
   {{else}}
-  <div class="empty"><div class="big">🧾</div>Nenhuma conta fixa cadastrada.</div>
+  <div class="empty">{{icon "wallet"}}<div>Nenhuma conta fixa cadastrada.</div><button class="btn primary mt" onclick="openDialog('dlg-bill')">{{icon "plus"}} Adicionar conta fixa</button></div>
   {{end}}
 </div>
 
 {{if .Recurring}}
 <div class="card mb">
-  <h2>Receitas recorrentes</h2>
+  <div class="card-head"><h2 class="card-title">Receitas recorrentes</h2></div>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Nome</th><th>Dia</th><th>Categoria</th><th class="num">Valor</th><th class="right"></th></tr></thead>
       <tbody>
         {{range .Recurring}}
         <tr>
-          <td>{{.Name}} {{if .IsSalary}}<span class="badge purple">salário</span>{{end}}</td>
+          <td><span class="strong">{{.Name}}</span> {{if .IsSalary}}<span class="badge purple no-dot">salário</span>{{end}}</td>
           <td>dia {{.Day}}</td>
-          <td class="muted">{{.Category}}</td>
+          <td>{{.Category}}</td>
           <td class="num pos">{{money .Amount}}</td>
-          <td class="right">
-            <form method="post" action="/recurring-incomes/{{.ID}}/delete" style="display:inline" onsubmit="return confirm('Excluir recorrência?')">
-              <button class="btn sm danger">✕</button>
-            </form>
-          </td>
+          <td class="right"><form method="post" action="/recurring-incomes/{{.ID}}/delete" style="display:inline" onsubmit="return confirm('Excluir recorrência?')"><button class="btn sm icon danger" title="Excluir">{{icon "trash"}}</button></form></td>
         </tr>
         {{end}}
       </tbody>
@@ -111,7 +96,7 @@
 
 <div class="grid cols-2">
   <div class="card">
-    <h2>Receitas — {{.Period}}</h2>
+    <div class="card-head"><h2 class="card-title">Receitas</h2><span class="muted small">{{.Period}}</span></div>
     {{if .Incomes}}
     <div class="table-wrap">
       <table>
@@ -119,27 +104,20 @@
         <tbody>
           {{range .Incomes}}
           <tr>
-            <td>{{.Description}} {{if eq .Source "pokemon"}}<span class="badge purple">Pokémon</span>{{else if eq .Source "recurring"}}<span class="badge info">recorrente</span>{{end}}<div class="muted small">{{.Category}}</div></td>
+            <td><span class="strong">{{.Description}}</span> {{if eq .Source "pokemon"}}<span class="badge purple no-dot">Pokémon</span>{{else if eq .Source "recurring"}}<span class="badge blue no-dot">recorrente</span>{{end}}<div class="muted small">{{.Category}}</div></td>
             <td class="nowrap">{{date .Date}}</td>
             <td class="num pos">{{money .Amount}}</td>
-            <td class="right">
-              {{if eq .Source "manual"}}
-              <form method="post" action="/incomes/{{.ID}}/delete" style="display:inline">
-                <input type="hidden" name="return" value="/financeiro?mes={{$.Period}}">
-                <button class="btn sm danger">✕</button>
-              </form>
-              {{end}}
-            </td>
+            <td class="right">{{if eq .Source "manual"}}<form method="post" action="/incomes/{{.ID}}/delete" style="display:inline"><input type="hidden" name="return" value="/financeiro?mes={{$.Period}}"><button class="btn sm icon danger" title="Excluir">{{icon "trash"}}</button></form>{{end}}</td>
           </tr>
           {{end}}
         </tbody>
       </table>
     </div>
-    {{else}}<div class="empty">Sem receitas neste mês.</div>{{end}}
+    {{else}}<div class="empty">{{icon "trend"}}<div>Sem receitas neste mês.</div></div>{{end}}
   </div>
 
   <div class="card">
-    <h2>Gastos avulsos — {{.Period}}</h2>
+    <div class="card-head"><h2 class="card-title">Gastos avulsos</h2><span class="muted small">{{.Period}}</span></div>
     {{if .Expenses}}
     <div class="table-wrap">
       <table>
@@ -147,31 +125,23 @@
         <tbody>
           {{range .Expenses}}
           <tr>
-            <td>{{.Description}} {{if eq .Source "pokemon"}}<span class="badge danger">reembolso</span>{{end}}<div class="muted small">{{.Category}}</div></td>
+            <td><span class="strong">{{.Description}}</span> {{if eq .Source "pokemon"}}<span class="badge red no-dot">reembolso</span>{{end}}<div class="muted small">{{.Category}}</div></td>
             <td class="nowrap">{{date .Date}}</td>
             <td class="num neg">{{money .Amount}}</td>
-            <td class="right">
-              {{if eq .Source "manual"}}
-              <form method="post" action="/expenses/{{.ID}}/delete" style="display:inline">
-                <input type="hidden" name="return" value="/financeiro?mes={{$.Period}}">
-                <button class="btn sm danger">✕</button>
-              </form>
-              {{end}}
-            </td>
+            <td class="right">{{if eq .Source "manual"}}<form method="post" action="/expenses/{{.ID}}/delete" style="display:inline"><input type="hidden" name="return" value="/financeiro?mes={{$.Period}}"><button class="btn sm icon danger" title="Excluir">{{icon "trash"}}</button></form>{{end}}</td>
           </tr>
           {{end}}
         </tbody>
       </table>
     </div>
-    {{else}}<div class="empty">Sem gastos avulsos neste mês.</div>{{end}}
+    {{else}}<div class="empty">{{icon "dollar"}}<div>Sem gastos avulsos neste mês.</div></div>{{end}}
   </div>
 </div>
 
-<!-- Dialogs -->
 <dialog id="dlg-bill">
   <form method="post" action="/bills">
     <input type="hidden" name="return" value="/financeiro?mes={{.Period}}">
-    <div class="dialog-head"><h3>Nova conta fixa</h3><button type="button" class="close-x" onclick="closeDialog('dlg-bill')">×</button></div>
+    <div class="dialog-head"><h3>Nova conta fixa</h3><button type="button" class="close-x" onclick="closeDialog('dlg-bill')">{{icon "x"}}</button></div>
     <div class="dialog-body">
       <div class="field"><label>Nome</label><input name="name" required placeholder="Ex: Aluguel"></div>
       <div class="form-grid">
@@ -187,7 +157,7 @@
 <dialog id="dlg-recurring">
   <form method="post" action="/recurring-incomes">
     <input type="hidden" name="return" value="/financeiro?mes={{.Period}}">
-    <div class="dialog-head"><h3>Receita recorrente</h3><button type="button" class="close-x" onclick="closeDialog('dlg-recurring')">×</button></div>
+    <div class="dialog-head"><h3>Receita recorrente</h3><button type="button" class="close-x" onclick="closeDialog('dlg-recurring')">{{icon "x"}}</button></div>
     <div class="dialog-body">
       <div class="field"><label>Nome</label><input name="name" required placeholder="Ex: Salário"></div>
       <div class="form-grid">
@@ -204,7 +174,7 @@
 <dialog id="dlg-income">
   <form method="post" action="/incomes">
     <input type="hidden" name="return" value="/financeiro?mes={{.Period}}">
-    <div class="dialog-head"><h3>Receita avulsa</h3><button type="button" class="close-x" onclick="closeDialog('dlg-income')">×</button></div>
+    <div class="dialog-head"><h3>Receita avulsa</h3><button type="button" class="close-x" onclick="closeDialog('dlg-income')">{{icon "x"}}</button></div>
     <div class="dialog-body">
       <div class="field"><label>Descrição</label><input name="description" required placeholder="Ex: Freela"></div>
       <div class="form-grid">
@@ -221,7 +191,7 @@
 <dialog id="dlg-expense">
   <form method="post" action="/expenses">
     <input type="hidden" name="return" value="/financeiro?mes={{.Period}}">
-    <div class="dialog-head"><h3>Gasto avulso</h3><button type="button" class="close-x" onclick="closeDialog('dlg-expense')">×</button></div>
+    <div class="dialog-head"><h3>Gasto avulso</h3><button type="button" class="close-x" onclick="closeDialog('dlg-expense')">{{icon "x"}}</button></div>
     <div class="dialog-body">
       <div class="field"><label>Descrição</label><input name="description" required placeholder="Ex: Mercado"></div>
       <div class="form-grid">
@@ -234,7 +204,5 @@
   </form>
 </dialog>
 
-<datalist id="cats">
-  {{range .Categories}}<option value="{{.}}">{{end}}
-</datalist>
+<datalist id="cats">{{range .Categories}}<option value="{{.}}">{{end}}</datalist>
 {{end}}

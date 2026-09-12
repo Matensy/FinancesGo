@@ -41,6 +41,13 @@ var funcMap = template.FuncMap{
 	"deref":     derefFloat,
 	"derefTime": derefTime,
 	"initials":  initials,
+	"icon":      iconSVG,
+}
+
+// iconSVG renders an inline SVG icon by name, referencing the sprite defined in
+// the layout. Styling (size, color) is handled entirely by CSS.
+func iconSVG(name string) template.HTML {
+	return template.HTML(`<svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-` + name + `"></use></svg>`)
 }
 
 // NewRenderer parses all templates from the embedded FS.

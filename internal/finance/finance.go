@@ -23,6 +23,10 @@ func startOfDay(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
 
+func startOfMonth(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
+}
+
 // Balance returns the current available balance:
 //
 //	initial + confirmed incomes (<= today) - expenses (<= today) - paid bills
@@ -67,7 +71,10 @@ func (e *Engine) available(balance float64, from, until time.Time) (models.Proje
 	if err != nil {
 		return models.ProjectionPoint{}, err
 	}
-	billsDue, _, err := e.store.UnpaidBillsDueBy(from.AddDate(0, 0, -3650), until) // include overdue
+	// Count unpaid bills that fall due from the start of the current month up to
+	// the target day. This includes bills already overdue this month, without
+	// letting recurring bills accumulate endlessly across past months.
+	billsDue, _, err := e.store.UnpaidBillsDueBy(startOfMonth(from), until)
 	if err != nil {
 		return models.ProjectionPoint{}, err
 	}

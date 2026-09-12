@@ -1,98 +1,71 @@
 {{define "content"}}
-<div class="topbar">
+<div class="page-head">
   <div>
     <h1>Relatório mensal</h1>
-    <div class="sub">Resumo de {{.Period}} — receitas, gastos e vendas Pokémon GO</div>
+    <div class="breadcrumb">Resumo de {{.Period}} · receitas, gastos e vendas</div>
   </div>
   <div class="btn-row">
-    <form method="post" action="/export/xlsx" style="display:inline"><button class="btn sm">⬇ Exportar .xlsx</button></form>
-    <form method="post" action="/export/csv" style="display:inline"><button class="btn sm">⬇ Exportar .csv</button></form>
+    <form method="post" action="/export/xlsx" style="display:inline"><button class="btn sm">{{icon "download"}} .xlsx</button></form>
+    <form method="post" action="/export/csv" style="display:inline"><button class="btn sm">{{icon "download"}} .csv</button></form>
   </div>
 </div>
 
-<div class="filters">
-  {{template "month_select" (dict "Options" .MonthOptions "Selected" .Period)}}
-</div>
+<div class="filters">{{template "month_select" (dict "Options" .MonthOptions "Selected" .Period)}}</div>
 
 <div class="grid cols-4 mb">
-  <div class="card stat"><span class="label">Receitas</span><span class="value sm pos">{{money .IncomeTotal}}</span></div>
-  <div class="card stat"><span class="label">Saídas totais</span><span class="value sm neg">{{money .TotalOut}}</span><span class="hint">Contas: {{money .PaidBills}} · Gastos: {{money .ExpenseTotal}}</span></div>
-  <div class="card stat"><span class="label">Resultado do mês</span><span class="value sm {{if lt .Net 0.0}}neg{{else}}pos{{end}}">{{money .Net}}</span></div>
-  <div class="card stat"><span class="label">Renda de Pokémon GO</span><span class="value sm" style="color:var(--purple-2)">{{money .PokemonIncome}}</span></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip g">{{icon "trend"}}</span><span class="stat-label">Receitas</span></div><div class="stat-value sm pos">{{money .IncomeTotal}}</div></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip r">{{icon "wallet"}}</span><span class="stat-label">Saídas totais</span></div><div class="stat-value sm">{{money .TotalOut}}</div><div class="stat-foot">Contas: {{money .PaidBills}} · Gastos: {{money .ExpenseTotal}}</div></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip b">{{icon "dollar"}}</span><span class="stat-label">Resultado</span></div><div class="stat-value sm {{if lt .Net 0.0}}neg{{else}}pos{{end}}">{{money .Net}}</div></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip p">{{icon "game"}}</span><span class="stat-label">Renda Pokémon GO</span></div><div class="stat-value sm" style="color:var(--primary-2)">{{money .PokemonIncome}}</div></div>
 </div>
 
 <div class="grid cols-2 mb">
   <div class="card">
-    <h2>Gastos por categoria</h2>
-    {{if .ByCategory}}
-    <div style="height:240px"><canvas id="chart-categories" data-labels="{{.CatLabels}}" data-values="{{.CatValues}}"></canvas></div>
-    {{else}}<div class="empty">Sem gastos registrados neste mês.</div>{{end}}
+    <div class="card-head"><h2 class="card-title">Gastos por categoria</h2></div>
+    {{if .ByCategory}}<div style="height:240px"><canvas id="chart-categories" data-labels="{{.CatLabels}}" data-values="{{.CatValues}}"></canvas></div>
+    {{else}}<div class="empty">{{icon "report"}}<div>Sem gastos registrados neste mês.</div></div>{{end}}
   </div>
   <div class="card">
-    <h2>Resumo Pokémon GO</h2>
+    <div class="card-head"><h2 class="card-title">Resumo Pokémon GO</h2></div>
     <div class="grid cols-2" style="gap:12px">
-      <div class="tl-item"><div class="lbl">Contas vendidas no mês</div><div class="amt">{{.SoldCount}}</div></div>
+      <div class="tl-item"><div class="lbl">Contas vendidas</div><div class="amt">{{.SoldCount}}</div></div>
       <div class="tl-item"><div class="lbl">Total vendido</div><div class="amt pos">{{money .SoldSum}}</div></div>
       <div class="tl-item"><div class="lbl">Ticket médio</div><div class="amt">{{money .Ticket}}</div></div>
-      <div class="tl-item"><div class="lbl">Contas com problema</div><div class="amt {{if gt .Stats.Problema 0}}neg{{end}}">{{.Stats.Problema}}</div></div>
+      <div class="tl-item"><div class="lbl">Com problema</div><div class="amt {{if gt .Stats.Problema 0}}neg{{end}}">{{.Stats.Problema}}</div></div>
     </div>
   </div>
 </div>
 
 {{if .Problems}}
 <div class="card mb">
-  <h2>Contas com problema</h2>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Conta</th><th>Data</th><th>Observação</th></tr></thead>
-      <tbody>
-        {{range .Problems}}
-        <tr><td>{{if .Email}}{{.Email}}{{else}}#{{.ID}}{{end}}</td><td>{{if .ProblemAt}}{{date (derefTime .ProblemAt)}}{{else}}—{{end}}</td><td class="muted">{{.ProblemNote}}</td></tr>
-        {{end}}
-      </tbody>
-    </table>
-  </div>
+  <div class="card-head"><h2 class="card-title">Contas com problema</h2></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Conta</th><th>Data</th><th>Observação</th></tr></thead>
+    <tbody>{{range .Problems}}<tr><td class="strong">{{if .Email}}{{.Email}}{{else}}#{{.ID}}{{end}}</td><td>{{if .ProblemAt}}{{date (derefTime .ProblemAt)}}{{else}}—{{end}}</td><td>{{.ProblemNote}}</td></tr>{{end}}</tbody>
+  </table></div>
 </div>
 {{end}}
 
 <div class="grid cols-2 mb">
   <div class="card">
-    <h2>Receitas do mês</h2>
-    {{if .Incomes}}
-    <div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Data</th><th class="num">Valor</th></tr></thead><tbody>
-      {{range .Incomes}}<tr><td>{{.Description}}<div class="muted small">{{.Category}}</div></td><td class="nowrap">{{date .Date}}</td><td class="num pos">{{money .Amount}}</td></tr>{{end}}
-    </tbody></table></div>
-    {{else}}<div class="empty">Nenhuma receita.</div>{{end}}
+    <div class="card-head"><h2 class="card-title">Receitas do mês</h2></div>
+    {{if .Incomes}}<div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Data</th><th class="num">Valor</th></tr></thead><tbody>
+      {{range .Incomes}}<tr><td><span class="strong">{{.Description}}</span><div class="muted small">{{.Category}}</div></td><td class="nowrap">{{date .Date}}</td><td class="num pos">{{money .Amount}}</td></tr>{{end}}
+    </tbody></table></div>{{else}}<div class="empty">{{icon "trend"}}<div>Nenhuma receita.</div></div>{{end}}
   </div>
   <div class="card">
-    <h2>Gastos do mês</h2>
-    {{if .Expenses}}
-    <div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Data</th><th class="num">Valor</th></tr></thead><tbody>
-      {{range .Expenses}}<tr><td>{{.Description}}<div class="muted small">{{.Category}}</div></td><td class="nowrap">{{date .Date}}</td><td class="num neg">{{money .Amount}}</td></tr>{{end}}
-    </tbody></table></div>
-    {{else}}<div class="empty">Nenhum gasto avulso.</div>{{end}}
+    <div class="card-head"><h2 class="card-title">Gastos do mês</h2></div>
+    {{if .Expenses}}<div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Data</th><th class="num">Valor</th></tr></thead><tbody>
+      {{range .Expenses}}<tr><td><span class="strong">{{.Description}}</span><div class="muted small">{{.Category}}</div></td><td class="nowrap">{{date .Date}}</td><td class="num neg">{{money .Amount}}</td></tr>{{end}}
+    </tbody></table></div>{{else}}<div class="empty">{{icon "dollar"}}<div>Nenhum gasto avulso.</div></div>{{end}}
   </div>
 </div>
 
 <div class="card">
-  <h2>Histórico de exportações</h2>
-  {{if .Exports}}
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Arquivo</th><th>Formato</th><th>Contas</th><th>Data</th><th class="right"></th></tr></thead>
-      <tbody>
-        {{range .Exports}}
-        <tr>
-          <td>{{.Filename}}</td>
-          <td><span class="badge purple">{{.Format}}</span></td>
-          <td>{{.AccountCount}}</td>
-          <td class="nowrap">{{datetime .CreatedAt}}</td>
-          <td class="right"><a class="btn sm ghost" href="/export/download?name={{.Filename}}">Baixar</a></td>
-        </tr>
-        {{end}}
-      </tbody>
-    </table>
-  </div>
-  {{else}}<div class="empty">Nenhuma exportação ainda. Use os botões no topo para exportar.</div>{{end}}
+  <div class="card-head"><h2 class="card-title">Histórico de exportações</h2></div>
+  {{if .Exports}}<div class="table-wrap"><table>
+    <thead><tr><th>Arquivo</th><th>Formato</th><th>Contas</th><th>Data</th><th class="right"></th></tr></thead>
+    <tbody>{{range .Exports}}<tr><td class="strong">{{.Filename}}</td><td><span class="badge purple no-dot">{{.Format}}</span></td><td>{{.AccountCount}}</td><td class="nowrap">{{datetime .CreatedAt}}</td><td class="right"><a class="btn sm ghost" href="/export/download?name={{.Filename}}">{{icon "download"}} Baixar</a></td></tr>{{end}}</tbody>
+  </table></div>{{else}}<div class="empty">{{icon "download"}}<div>Nenhuma exportação ainda. Use os botões no topo para exportar.</div></div>{{end}}
 </div>
 {{end}}

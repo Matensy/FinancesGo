@@ -2,12 +2,12 @@
 (function () {
   "use strict";
 
-  const PURPLE = "#8B5CF6";
-  const PURPLE2 = "#A855F7";
-  const GREEN = "#34D399";
-  const RED = "#F87171";
-  const MUTED = "#9A93A8";
-  const GRID = "rgba(255,255,255,0.06)";
+  const PURPLE = "#7c5cff";
+  const PURPLE2 = "#a855f7";
+  const GREEN = "#2dd4a7";
+  const RED = "#ff5d7a";
+  const MUTED = "#7f8397";
+  const GRID = "rgba(255,255,255,0.05)";
 
   function brl(v) {
     return "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -69,8 +69,8 @@
             labels: labels,
             datasets: [{
               data: values,
-              backgroundColor: [PURPLE, PURPLE2, "#EC4899", "#60A5FA", "#34D399", "#FBBF24", "#F87171", "#22D3EE", "#A3E635"],
-              borderColor: "#151318", borderWidth: 2
+              backgroundColor: [PURPLE, PURPLE2, "#ec4899", "#4d8dff", "#2dd4a7", "#f5b942", "#ff5d7a", "#22d3ee", "#a3e635"],
+              borderColor: "#14161f", borderWidth: 3
             }]
           },
           options: baseOpts({ cutout: "62%" })

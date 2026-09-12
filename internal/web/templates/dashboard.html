@@ -1,68 +1,68 @@
 {{define "content"}}
-<div class="topbar">
+<div class="page-head">
   <div>
     <h1>Dashboard</h1>
-    <div class="sub">Visão geral das suas finanças e contas Pokémon GO</div>
+    <div class="breadcrumb">Visão geral {{icon "chevron"}} Finanças e Pokémon GO</div>
   </div>
   <div class="btn-row">
-    <a href="/financeiro" class="btn sm">💰 Financeiro</a>
-    <a href="/pokemon" class="btn sm">🎮 Pokémon GO</a>
+    <a href="/configuracoes" class="btn sm">{{icon "settings"}} Ajustar saldo</a>
+    <a href="/relatorio" class="btn sm primary">{{icon "download"}} Relatório</a>
   </div>
 </div>
 
 {{if .Alerts}}
-<div class="alert warn">
-  ⚠️ Você tem {{len .Alerts}} conta(s) vencendo nos próximos dias:
-  {{range $i, $b := .Alerts}}{{if $i}}, {{end}}<b>{{$b.Name}}</b> ({{money $b.Amount}} · {{date $b.DueDate}}){{end}}
-</div>
+<div class="note warn">{{icon "alert"}}<div><b>{{len .Alerts}} conta(s)</b> vencendo nos próximos dias:
+  {{range $i, $b := .Alerts}}{{if $i}}, {{end}}{{$b.Name}} ({{money $b.Amount}} · {{date $b.DueDate}}){{end}}
+</div></div>
 {{end}}
 
 <div class="hero mb">
-  <div class="label">Saldo total</div>
-  <div class="balance">{{money .Balance}}</div>
-  <div class="today">Posso gastar hoje: <b>{{money .Projection.Today.Available}}</b></div>
+  <div>
+    <div class="hero-label">Saldo total</div>
+    <div class="hero-balance">{{money .Balance}}</div>
+  </div>
+  <div class="hero-side">
+    <div class="k">Posso gastar hoje</div>
+    <div class="v">{{money .Projection.Today.Available}}</div>
+  </div>
 </div>
 
 <div class="grid cols-4 mb">
-  <div class="card stat">
-    <span class="label">Receitas do mês</span>
-    <span class="value sm pos">{{money .IncomeTotal}}</span>
+  <div class="stat-card">
+    <div class="stat-top"><span class="chip g">{{icon "trend"}}</span><span class="stat-label">Receitas do mês</span></div>
+    <div class="stat-value sm pos">{{money .IncomeTotal}}</div>
+    <div class="stat-foot">Entradas confirmadas</div>
   </div>
-  <div class="card stat">
-    <span class="label">Saídas do mês</span>
-    <span class="value sm neg">{{money .MonthOut}}</span>
-    <span class="hint">Contas pagas: {{money .PaidBills}}</span>
+  <div class="stat-card">
+    <div class="stat-top"><span class="chip r">{{icon "wallet"}}</span><span class="stat-label">Saídas do mês</span></div>
+    <div class="stat-value sm">{{money .MonthOut}}</div>
+    <div class="stat-foot">Contas pagas: {{money .PaidBills}}</div>
   </div>
-  <div class="card stat">
-    <span class="label">Contas Pokémon ativas</span>
-    <span class="value sm">{{.Stats.Ativa}}</span>
-    <span class="hint">Catálogo: {{money .Stats.CatalogValue}}</span>
+  <div class="stat-card">
+    <div class="stat-top"><span class="chip p">{{icon "game"}}</span><span class="stat-label">Contas ativas</span></div>
+    <div class="stat-value sm">{{.Stats.Ativa}}</div>
+    <div class="stat-foot">Catálogo: {{money .Stats.CatalogValue}}</div>
   </div>
-  <div class="card stat">
-    <span class="label">Vendas em espera (7 dias)</span>
-    <span class="value sm warn">{{money .Stats.PendingValue}}</span>
-    <span class="hint">{{.Stats.PendingMature}} conta(s) a liberar</span>
+  <div class="stat-card">
+    <div class="stat-top"><span class="chip a">{{icon "clock"}}</span><span class="stat-label">Vendas em espera</span></div>
+    <div class="stat-value sm">{{money .Stats.PendingValue}}</div>
+    <div class="stat-foot">{{.Stats.PendingMature}} conta(s) a liberar</div>
   </div>
 </div>
 
 <div class="grid cols-2 mb">
   <div class="card">
-    <h2>Quanto posso gastar</h2>
+    <div class="card-head"><div><h2 class="card-title">Quanto posso gastar</h2><div class="card-sub">Projeção considerando receitas e contas a pagar</div></div></div>
     {{template "projection_timeline" .Projection}}
   </div>
   <div class="card">
-    <h2>Fluxo de caixa (6 meses)</h2>
-    <div style="height:240px">
-      <canvas id="chart-cashflow"
-        data-labels="{{.FlowLabels}}"
-        data-inflow="{{.FlowInflow}}"
-        data-outflow="{{.FlowOutflow}}"></canvas>
-    </div>
+    <div class="card-head"><div><h2 class="card-title">Fluxo de caixa</h2><div class="card-sub">Entradas e saídas dos últimos 6 meses</div></div></div>
+    <div style="height:236px"><canvas id="chart-cashflow" data-labels="{{.FlowLabels}}" data-inflow="{{.FlowInflow}}" data-outflow="{{.FlowOutflow}}"></canvas></div>
   </div>
 </div>
 
 <div class="card">
-  <div class="card-head"><h2>Contas a vencer</h2><a href="/financeiro" class="btn sm ghost">Ver todas</a></div>
+  <div class="card-head"><div><h2 class="card-title">Contas a vencer</h2><div class="card-sub">Próximos 30 dias</div></div><a href="/financeiro" class="btn sm ghost">Ver todas {{icon "chevron"}}</a></div>
   {{if .Upcoming}}
   <div class="table-wrap">
     <table>
@@ -70,10 +70,10 @@
       <tbody>
         {{range .Upcoming}}
         <tr>
-          <td>{{.Name}}</td>
-          <td class="muted">{{.Category}}</td>
-          <td class="nowrap">{{date .DueDate}} <span class="muted small">({{if lt .DaysUntil 0}}atrasada{{else if eq .DaysUntil 0}}hoje{{else}}em {{.DaysUntil}}d{{end}})</span></td>
-          <td class="num">{{money .Amount}}</td>
+          <td><span class="strong">{{.Name}}</span></td>
+          <td>{{.Category}}</td>
+          <td class="nowrap">{{date .DueDate}} <span class="muted small">· {{if lt .DaysUntil 0}}atrasada{{else if eq .DaysUntil 0}}hoje{{else}}em {{.DaysUntil}}d{{end}}</span></td>
+          <td class="num strong">{{money .Amount}}</td>
           <td>{{if eq .Status "atrasada"}}<span class="badge atrasada">Atrasada</span>{{else}}<span class="badge avencer">A vencer</span>{{end}}</td>
         </tr>
         {{end}}
@@ -81,7 +81,7 @@
     </table>
   </div>
   {{else}}
-  <div class="empty"><div class="big">🎉</div>Nenhuma conta pendente nos próximos 30 dias.</div>
+  <div class="empty">{{icon "check"}}<div>Nenhuma conta pendente nos próximos 30 dias.</div></div>
   {{end}}
 </div>
 {{end}}
