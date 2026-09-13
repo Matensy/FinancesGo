@@ -5,11 +5,14 @@
     <h1>Metas de ganho</h1>
     <div class="breadcrumb">Meta diária com rollover · semana e mês</div>
   </div>
-  <a href="/configuracoes" class="btn sm">{{icon "settings"}} Definir meta</a>
+  <div class="btn-row">
+    <a href="/configuracoes" class="btn sm">{{icon "settings"}} Definir meta</a>
+    <button class="btn sm primary" onclick="openDialog('dlg-earning')">{{icon "plus"}} Registrar ganho</button>
+  </div>
 </div>
 
 {{if not $g.Enabled}}
-<div class="note info">{{icon "info"}}<div>Defina sua <b>meta de ganho por dia</b> em Configurações (ex: R$ 100) para acompanhar aqui. Conta as vendas GGMAX pelo dia da venda.</div></div>
+<div class="note info">{{icon "info"}}<div>Defina sua <b>meta de ganho por dia</b> em Configurações (ex: R$ 100) para acompanhar aqui. Você lança os ganhos manualmente no botão "Registrar ganho".</div></div>
 {{end}}
 
 <div class="grid cols-3 mb">
@@ -48,9 +51,43 @@
   <div style="height:260px"><canvas id="chart-earnings" data-labels="{{.DayLabels}}" data-values="{{.DayValues}}" data-goal="{{$g.Goal}}"></canvas></div>
 </div>
 
-<div class="grid cols-3">
+<div class="grid cols-3 mb">
   <div class="stat-card"><div class="stat-top"><span class="chip g">{{icon "trend"}}</span><span class="stat-label">Média por dia (mês)</span></div><div class="stat-value sm">{{money $g.AvgPerDay}}</div></div>
   <div class="stat-card"><div class="stat-top"><span class="chip b">{{icon "flame"}}</span><span class="stat-label">Melhor dia (30d)</span></div><div class="stat-value sm">{{money $g.BestDay}}</div></div>
   <div class="stat-card"><div class="stat-top"><span class="chip {{if $g.Ahead}}g{{else}}r{{end}}">{{icon "target"}}</span><span class="stat-label">Saldo da meta (mês)</span></div><div class="stat-value sm {{if $g.Ahead}}pos{{else}}neg{{end}}">{{if $g.Ahead}}+{{end}}{{money $g.MonthBalance}}</div></div>
 </div>
+
+<div class="card">
+  <div class="card-head"><h2 class="card-title">Ganhos lançados</h2><button class="btn sm primary" onclick="openDialog('dlg-earning')">{{icon "plus"}} Registrar ganho</button></div>
+  {{if .Earnings}}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Data</th><th>Nota</th><th class="num">Valor</th><th class="right"></th></tr></thead>
+    <tbody>
+      {{range .Earnings}}
+      <tr>
+        <td class="nowrap strong">{{date .Date}}</td>
+        <td>{{if nonEmpty .Note}}{{.Note}}{{else}}<span class="muted">—</span>{{end}}</td>
+        <td class="num pos">{{money .Amount}}</td>
+        <td class="right"><form method="post" action="/earnings/{{.ID}}/delete" style="display:inline"><button class="btn sm icon danger" title="Excluir">{{icon "trash"}}</button></form></td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table></div>
+  {{else}}<div class="empty">{{icon "target"}}<div>Nenhum ganho lançado ainda. Clique em "Registrar ganho".</div></div>{{end}}
+</div>
+
+<dialog id="dlg-earning">
+  <form method="post" action="/earnings">
+    <div class="dialog-head"><h3>Registrar ganho do dia</h3><button type="button" class="close-x" onclick="closeDialog('dlg-earning')">{{icon "x"}}</button></div>
+    <div class="dialog-body">
+      <div class="note info sm">{{icon "info"}}<div>Lance quanto você ganhou. Pode registrar várias vezes no mesmo dia — elas somam.</div></div>
+      <div class="form-grid">
+        <div class="field"><label>Valor (R$)</label><input name="amount" inputmode="decimal" placeholder="100,00" required autofocus></div>
+        <div class="field"><label>Data</label><input name="date" type="date" value="{{today}}"></div>
+      </div>
+      <div class="field"><label>Nota (opcional)</label><input name="note" placeholder="Ex: venda de 2 contas"></div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-earning')">Cancelar</button><button class="btn primary">Registrar</button></div>
+  </form>
+</dialog>
 {{end}}

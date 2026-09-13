@@ -29,6 +29,8 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("GET /pokemon", a.requireAuth(a.handlePokemonList))
 	mux.HandleFunc("GET /pokemon/{id}", a.requireAuth(a.handlePokemonDetail))
 	mux.HandleFunc("GET /metas", a.requireAuth(a.handleGoals))
+	mux.HandleFunc("POST /earnings", a.requireAuth(a.handleEarningCreate))
+	mux.HandleFunc("POST /earnings/{id}/delete", a.requireAuth(a.handleEarningDelete))
 	mux.HandleFunc("GET /relatorio", a.requireAuth(a.handleReport))
 	mux.HandleFunc("GET /configuracoes", a.requireAuth(a.handleSettings))
 

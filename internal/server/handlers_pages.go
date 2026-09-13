@@ -292,6 +292,7 @@ func (a *App) handleGoals(w http.ResponseWriter, r *http.Request) {
 	a.withCore(func(c *core) {
 		g, _ := c.finance.Goals()
 		data["Goal"] = g
+		data["Earnings"], _ = c.store.ListRecentEarnings(20)
 		labels := make([]string, len(g.Days))
 		values := make([]float64, len(g.Days))
 		for i, d := range g.Days {

@@ -110,6 +110,15 @@ CREATE TABLE IF NOT EXISTS export_history (
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS earnings_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    date       DATE NOT NULL,
+    amount     REAL NOT NULL,
+    note       TEXT NOT NULL DEFAULT '',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_earnings_date ON earnings_log(date);
 CREATE INDEX IF NOT EXISTS idx_incomes_date ON incomes(date);
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
 CREATE INDEX IF NOT EXISTS idx_bill_payments_period ON bill_payments(period);

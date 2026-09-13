@@ -176,6 +176,28 @@ func (a *App) handleExpenseDelete(w http.ResponseWriter, r *http.Request) {
 	redirectBack(w, r, "/financeiro")
 }
 
+// --- Manual earnings (daily goal) ---
+
+func (a *App) handleEarningCreate(w http.ResponseWriter, r *http.Request) {
+	amount := parseMoney(r.FormValue("amount"))
+	date := parseDate(r.FormValue("date"))
+	note := r.FormValue("note")
+	if amount != 0 {
+		a.withCore(func(c *core) { _, _ = c.store.AddEarning(amount, date, note) })
+	}
+	redirectBack(w, r, "/metas")
+}
+
+func (a *App) handleEarningDelete(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(r)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	a.withCore(func(c *core) { _ = c.store.DeleteEarning(id) })
+	redirectBack(w, r, "/metas")
+}
+
 // --- GGMAX wallet ---
 
 // handleGGMAXVoid toggles the refunded/void state of a GGMAX sale.

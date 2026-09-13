@@ -185,6 +185,15 @@ func (p PokemonAccount) TagList() []string {
 	return out
 }
 
+// Earning is a manually logged daily earning that drives the goal tracker.
+type Earning struct {
+	ID        int64
+	Date      time.Time
+	Amount    float64
+	Note      string
+	CreatedAt time.Time
+}
+
 // PriceHistory records a base value / final price snapshot over time.
 type PriceHistory struct {
 	ID         int64
