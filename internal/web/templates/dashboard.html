@@ -50,6 +50,22 @@
   </div>
 </div>
 
+{{if .Goal.Enabled}}
+<div class="card mb" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+  <div style="min-width:180px">
+    <div class="card-sub">Meta de hoje {{if .Goal.DoneToday}}<span class="badge green no-dot">Concluída</span>{{end}}</div>
+    <div class="stat-value sm">{{money .Goal.TargetToday}}</div>
+    <div class="stat-foot">Ganho hoje: <span class="pos strong">{{money .Goal.EarnedToday}}</span>{{if not .Goal.DoneToday}} · falta {{money .Goal.MissingToday}}{{end}}</div>
+  </div>
+  <div class="bag-bar" style="flex:1;min-width:140px;height:10px"><span style="width:{{pctOf .Goal.EarnedToday .Goal.TargetToday}}%;{{if .Goal.DoneToday}}background:linear-gradient(90deg,#2dd4a7,#22d3ee){{end}}"></span></div>
+  <div class="right" style="min-width:150px">
+    <div class="card-sub">Mês: {{money .Goal.MonthEarned}} / {{money .Goal.MonthTarget}}</div>
+    <div class="{{if .Goal.Ahead}}pos{{else}}neg{{end}}" style="font-weight:600">{{if .Goal.Ahead}}Adiantado{{else}}Atrasado{{end}} {{money .Goal.BalanceAbs}}</div>
+    <a href="/metas" class="btn sm ghost mt">Ver metas {{icon "chevron"}}</a>
+  </div>
+</div>
+{{end}}
+
 <div class="grid cols-3 mb">
   <div class="card">
     <div class="card-head"><div><h2 class="card-title">Recomendação de gasto</h2><div class="card-sub">Para fechar o mês no azul{{if .Rec.HasGoal}} e bater a meta{{end}}</div></div></div>

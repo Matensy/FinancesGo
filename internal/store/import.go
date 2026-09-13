@@ -53,6 +53,7 @@ func (s *Store) ImportGGMAX(txs []ggmax.Tx) (GGMAXImportResult, error) {
 		if tx.VendaCode != "" {
 			desc = "Venda GGMAX #" + tx.VendaCode
 		}
+		saleDate := tx.Date
 		if _, err := s.CreateIncome(models.Income{
 			Description: desc,
 			Amount:      tx.Value,
@@ -61,6 +62,7 @@ func (s *Store) ImportGGMAX(txs []ggmax.Tx) (GGMAXImportResult, error) {
 			Confirmed:   true,
 			Source:      "ggmax",
 			ExternalID:  extID,
+			SaleDate:    &saleDate,
 		}); err != nil {
 			return res, fmt.Errorf("importar %s: %w", tx.ID, err)
 		}

@@ -1,0 +1,56 @@
+{{define "content"}}
+{{$g := .Goal}}
+<div class="page-head">
+  <div>
+    <h1>Metas de ganho</h1>
+    <div class="breadcrumb">Meta diária com rollover · semana e mês</div>
+  </div>
+  <a href="/configuracoes" class="btn sm">{{icon "settings"}} Definir meta</a>
+</div>
+
+{{if not $g.Enabled}}
+<div class="note info">{{icon "info"}}<div>Defina sua <b>meta de ganho por dia</b> em Configurações (ex: R$ 100) para acompanhar aqui. Conta as vendas GGMAX pelo dia da venda.</div></div>
+{{end}}
+
+<div class="grid cols-3 mb">
+  <div class="card">
+    <div class="card-head"><div><h2 class="card-title">Meta de hoje</h2><div class="card-sub">Base {{money $g.Goal}}{{if ne $g.TargetToday $g.Goal}} + rollover{{end}}</div></div>
+      {{if $g.DoneToday}}<span class="badge green no-dot">Concluída</span>{{else if $g.Enabled}}<span class="badge amber no-dot">Em aberto</span>{{end}}
+    </div>
+    <div class="stat-value" style="font-size:30px">{{money $g.TargetToday}}</div>
+    <div class="bag-bar mt" style="height:8px"><span style="width:{{pctOf $g.EarnedToday $g.TargetToday}}%;{{if $g.DoneToday}}background:linear-gradient(90deg,#2dd4a7,#22d3ee){{end}}"></span></div>
+    <div class="stat-foot mt">Ganho hoje: <span class="strong pos">{{money $g.EarnedToday}}</span>
+      {{if $g.DoneToday}} · adiantado {{money (sub $g.EarnedToday $g.TargetToday)}}{{else}} · falta <span class="warn">{{money $g.MissingToday}}</span>{{end}}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div><h2 class="card-title">Esta semana</h2><div class="card-sub">Últimos 7 dias</div></div><span class="chip t">{{icon "calendar"}}</span></div>
+    <div class="stat-value sm pos">{{money $g.WeekEarned}}</div>
+    <div class="bag-bar mt" style="height:8px"><span style="width:{{pctOf $g.WeekEarned $g.WeekTarget}}%"></span></div>
+    <div class="stat-foot mt">Meta da semana: {{money $g.WeekTarget}} ({{pctOf $g.WeekEarned $g.WeekTarget}}%)</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div><h2 class="card-title">Este mês</h2><div class="card-sub">{{$g.DaysElapsed}} de {{$g.DaysInMonth}} dias</div></div><span class="chip p">{{icon "target"}}</span></div>
+    <div class="stat-value sm pos">{{money $g.MonthEarned}}</div>
+    <div class="stat-foot mt">Meta até hoje: {{money $g.MonthTarget}}</div>
+    {{if $g.Ahead}}
+      <div class="note ok sm mt">{{icon "check"}}<div>Adiantado <b>{{money $g.BalanceAbs}}</b> na meta do mês.</div></div>
+    {{else}}
+      <div class="note warn sm mt">{{icon "flame"}}<div>Atrasado <b>{{money $g.BalanceAbs}}</b> — precisa recuperar.</div></div>
+    {{end}}
+  </div>
+</div>
+
+<div class="card mb">
+  <div class="card-head"><div><h2 class="card-title">Ganhos por dia</h2><div class="card-sub">Últimos 30 dias · linha = meta de {{money $g.Goal}}</div></div></div>
+  <div style="height:260px"><canvas id="chart-earnings" data-labels="{{.DayLabels}}" data-values="{{.DayValues}}" data-goal="{{$g.Goal}}"></canvas></div>
+</div>
+
+<div class="grid cols-3">
+  <div class="stat-card"><div class="stat-top"><span class="chip g">{{icon "trend"}}</span><span class="stat-label">Média por dia (mês)</span></div><div class="stat-value sm">{{money $g.AvgPerDay}}</div></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip b">{{icon "flame"}}</span><span class="stat-label">Melhor dia (30d)</span></div><div class="stat-value sm">{{money $g.BestDay}}</div></div>
+  <div class="stat-card"><div class="stat-top"><span class="chip {{if $g.Ahead}}g{{else}}r{{end}}">{{icon "target"}}</span><span class="stat-label">Saldo da meta (mês)</span></div><div class="stat-value sm {{if $g.Ahead}}pos{{else}}neg{{end}}">{{if $g.Ahead}}+{{end}}{{money $g.MonthBalance}}</div></div>
+</div>
+{{end}}

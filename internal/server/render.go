@@ -43,6 +43,25 @@ var funcMap = template.FuncMap{
 	"initials":  initials,
 	"icon":      iconSVG,
 	"reached":   dateReached,
+	"pctOf":     pctOf,
+}
+
+// pctOf returns part/whole as an integer percentage clamped to 0..100.
+func pctOf(part, whole float64) int {
+	if whole <= 0 {
+		if part > 0 {
+			return 100
+		}
+		return 0
+	}
+	p := int(math.Round(part / whole * 100))
+	if p < 0 {
+		return 0
+	}
+	if p > 100 {
+		return 100
+	}
+	return p
 }
 
 // dateReached reports whether t is today or in the past (local day).

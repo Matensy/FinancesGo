@@ -227,8 +227,9 @@ func (a *App) handleSettingsCard(w http.ResponseWriter, r *http.Request) {
 	used := parseMoney(r.FormValue("card_used"))
 	dueDay := parseIntField(r.FormValue("card_due_day"))
 	goal := parseMoney(r.FormValue("monthly_goal"))
+	dailyGoal := parseMoney(r.FormValue("daily_goal"))
 	a.withCore(func(c *core) {
-		_ = c.store.UpdateCardGoalSettings(limit, used, dueDay, goal)
+		_ = c.store.UpdateCardGoalSettings(limit, used, dueDay, goal, dailyGoal)
 	})
 	http.Redirect(w, r, "/configuracoes?saved=1&msg="+url.QueryEscape("Cartão e meta salvos"), http.StatusSeeOther)
 }

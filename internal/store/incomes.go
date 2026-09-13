@@ -11,11 +11,15 @@ import (
 
 // CreateIncome inserts a concrete income entry.
 func (s *Store) CreateIncome(in models.Income) (int64, error) {
+	var saleDate any
+	if in.SaleDate != nil {
+		saleDate = fmtDate(*in.SaleDate)
+	}
 	res, err := s.db.Exec(`INSERT INTO incomes
-		(description, amount, date, category, confirmed, source, pokemon_account_id, period, external_id)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		(description, amount, date, category, confirmed, source, pokemon_account_id, period, external_id, sale_date)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		in.Description, in.Amount, fmtDate(in.Date), in.Category,
-		boolToInt(in.Confirmed), sourceOr(in.Source), in.PokemonID, in.Period, nullStr(in.ExternalID))
+		boolToInt(in.Confirmed), sourceOr(in.Source), in.PokemonID, in.Period, nullStr(in.ExternalID), saleDate)
 	if err != nil {
 		return 0, err
 	}
@@ -50,10 +54,13 @@ func scanIncomes(rows *sql.Rows) ([]models.Income, error) {
 		var date, created string
 		var confirmed, voided int
 		var pokemonID sql.NullInt64
-		var period, extID sql.NullString
+		var period, extID, saleDate sql.NullString
 		if err := rows.Scan(&in.ID, &in.Description, &in.Amount, &date, &in.Category,
-			&confirmed, &in.Source, &pokemonID, &period, &extID, &voided, &created); err != nil {
+			&confirmed, &in.Source, &pokemonID, &period, &extID, &voided, &saleDate, &created); err != nil {
 			return nil, err
+		}
+		if sd := nullTime(saleDate); sd != nil {
+			in.SaleDate = sd
 		}
 		in.Date = parseTime(date)
 		in.Confirmed = confirmed == 1
@@ -75,7 +82,7 @@ func scanIncomes(rows *sql.Rows) ([]models.Income, error) {
 	return out, rows.Err()
 }
 
-const incomeCols = `id, description, amount, date, category, confirmed, source, pokemon_account_id, period, external_id, voided, created_at`
+const incomeCols = `id, description, amount, date, category, confirmed, source, pokemon_account_id, period, external_id, voided, sale_date, created_at`
 
 // bankSources is the SQL fragment excluding money that lives on the GGMAX
 // platform (raw imported sales) from the real bank balance. Withdrawals

@@ -28,6 +28,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("GET /financeiro", a.requireAuth(a.handleFinance))
 	mux.HandleFunc("GET /pokemon", a.requireAuth(a.handlePokemonList))
 	mux.HandleFunc("GET /pokemon/{id}", a.requireAuth(a.handlePokemonDetail))
+	mux.HandleFunc("GET /metas", a.requireAuth(a.handleGoals))
 	mux.HandleFunc("GET /relatorio", a.requireAuth(a.handleReport))
 	mux.HandleFunc("GET /configuracoes", a.requireAuth(a.handleSettings))
 
@@ -124,6 +125,8 @@ func sectionFor(path string) string {
 		return "financeiro"
 	case strings.HasPrefix(path, "/pokemon"):
 		return "pokemon"
+	case strings.HasPrefix(path, "/metas"):
+		return "metas"
 	case strings.HasPrefix(path, "/relatorio"):
 		return "relatorio"
 	case strings.HasPrefix(path, "/configuracoes"):

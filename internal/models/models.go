@@ -37,6 +37,7 @@ type Settings struct {
 	CardUsed    float64 // amount currently used on the card (fatura)
 	CardDueDay  int     // day of month the card bill is due (default 5)
 	MonthlyGoal float64 // desired balance at the end of each month
+	DailyGoal   float64 // target earnings per day (GGMAX sales)
 }
 
 // CardAvailable returns the remaining credit card limit.
@@ -117,9 +118,10 @@ type Income struct {
 	Confirmed   bool
 	Source      string // "manual" | "recurring" | "pokemon" | "ggmax" | "ggmax_withdraw"
 	PokemonID   *int64
-	Period      *string // set for materialized recurring incomes
-	ExternalID  string  // dedup key for imported entries (e.g. GGMAX tx id)
-	Voided      bool    // refunded/cancelled: counts nowhere
+	Period      *string    // set for materialized recurring incomes
+	ExternalID  string     // dedup key for imported entries (e.g. GGMAX tx id)
+	Voided      bool       // refunded/cancelled: counts nowhere
+	SaleDate    *time.Time // for GGMAX sales: the day sold (distinct from release date)
 	CreatedAt   time.Time
 }
 

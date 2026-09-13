@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS incomes (
     period             TEXT,
     external_id        TEXT,
     voided             INTEGER NOT NULL DEFAULT 0,
+    sale_date          DATE,
     created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 -- NOTE: the unique index on external_id is created in migrate() (db.go), after

@@ -75,7 +75,9 @@ func (a *App) handleDashboard(w http.ResponseWriter, r *http.Request) {
 
 		wallet, _ := c.store.GGMAXWalletState(now)
 		rec, _ := c.finance.Recommend()
+		goal, _ := c.finance.Goals()
 
+		data["Goal"] = goal
 		data["Balance"] = balance
 		data["Projection"] = proj
 		data["Stats"] = stats
@@ -283,6 +285,23 @@ func (a *App) handleReport(w http.ResponseWriter, r *http.Request) {
 	})
 	data["Period"] = period
 	a.render(w, "report.html", data)
+}
+
+func (a *App) handleGoals(w http.ResponseWriter, r *http.Request) {
+	data := a.baseData(r, "Metas")
+	a.withCore(func(c *core) {
+		g, _ := c.finance.Goals()
+		data["Goal"] = g
+		labels := make([]string, len(g.Days))
+		values := make([]float64, len(g.Days))
+		for i, d := range g.Days {
+			labels[i] = d.Date.Format("02/01")
+			values[i] = d.Amount
+		}
+		data["DayLabels"] = jsonStr(labels)
+		data["DayValues"] = jsonStr(values)
+	})
+	a.render(w, "goals.html", data)
 }
 
 func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {

@@ -21,6 +21,7 @@ const (
 	keyMonthlyGoal    = "monthly_goal"
 	keyGGMAXAdjAvail  = "ggmax_adj_available"
 	keyGGMAXAdjPend   = "ggmax_adj_pending"
+	keyDailyGoal      = "daily_goal"
 )
 
 // GGMAXAdjustments returns the manual offsets applied to the GGMAX wallet.
@@ -113,6 +114,8 @@ func (s *Store) Settings() (models.Settings, error) {
 			}
 		case keyMonthlyGoal:
 			cfg.MonthlyGoal, _ = strconv.ParseFloat(v, 64)
+		case keyDailyGoal:
+			cfg.DailyGoal, _ = strconv.ParseFloat(v, 64)
 		}
 	}
 	return cfg, rows.Err()
@@ -159,8 +162,8 @@ func (s *Store) UpdateFinanceSettings(initialBalance, ggmaxRate float64, currenc
 	return tx.Commit()
 }
 
-// UpdateCardGoalSettings persists the credit-card and monthly-goal settings.
-func (s *Store) UpdateCardGoalSettings(cardLimit, cardUsed float64, cardDueDay int, goal float64) error {
+// UpdateCardGoalSettings persists the credit-card and goal settings.
+func (s *Store) UpdateCardGoalSettings(cardLimit, cardUsed float64, cardDueDay int, goal, dailyGoal float64) error {
 	if cardDueDay <= 0 {
 		cardDueDay = 5
 	}
@@ -169,6 +172,7 @@ func (s *Store) UpdateCardGoalSettings(cardLimit, cardUsed float64, cardDueDay i
 		keyCardUsed:    strconv.FormatFloat(cardUsed, 'f', 2, 64),
 		keyCardDueDay:  strconv.Itoa(cardDueDay),
 		keyMonthlyGoal: strconv.FormatFloat(goal, 'f', 2, 64),
+		keyDailyGoal:   strconv.FormatFloat(dailyGoal, 'f', 2, 64),
 	}
 	for k, v := range pairs {
 		if err := s.SetSetting(k, v); err != nil {

@@ -58,6 +58,27 @@
       });
     }
 
+    const earn = document.getElementById("chart-earnings");
+    if (earn) {
+      const values = parse(earn, "data-values");
+      const goal = parseFloat(earn.getAttribute("data-goal") || "0") || 0;
+      const colors = values.map((v) => (goal > 0 && v >= goal ? GREEN : PURPLE));
+      const datasets = [
+        { type: "bar", label: "Ganho", data: values, backgroundColor: colors, borderRadius: 5, maxBarThickness: 22, order: 2 }
+      ];
+      if (goal > 0) {
+        datasets.push({
+          type: "line", label: "Meta", data: values.map(() => goal),
+          borderColor: "#f5b942", borderWidth: 2, borderDash: [6, 4],
+          pointRadius: 0, fill: false, order: 1
+        });
+      }
+      new Chart(earn, {
+        data: { labels: parse(earn, "data-labels"), datasets: datasets },
+        options: baseOpts({ scales: axisOpts() })
+      });
+    }
+
     const cat = document.getElementById("chart-categories");
     if (cat) {
       const labels = parse(cat, "data-labels");

@@ -58,6 +58,7 @@
       <div class="field"><label>Usado no crédito (fatura atual)</label><input name="card_used" inputmode="decimal" value="{{num .Cfg.CardUsed}}"></div>
       <div class="field"><label>Dia de vencimento da fatura</label><input name="card_due_day" type="number" min="1" max="31" value="{{.Cfg.CardDueDay}}"></div>
       <div class="field"><label>Meta de saldo no fim do mês (R$)</label><input name="monthly_goal" inputmode="decimal" value="{{num .Cfg.MonthlyGoal}}" placeholder="5000,00"></div>
+      <div class="field"><label>Meta de ganho por dia (R$)</label><input name="daily_goal" inputmode="decimal" value="{{num .Cfg.DailyGoal}}" placeholder="100,00"></div>
     </div>
     <button class="btn primary">{{icon "check"}} Salvar cartão e meta</button>
   </form>
