@@ -132,20 +132,58 @@ func (a *App) handleBackupImport(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) handleImportGGMAX(w http.ResponseWriter, r *http.Request) {
 	raw := r.FormValue("data")
-	txs := ggmax.Parse(raw)
-	if len(txs) == 0 {
-		http.Redirect(w, r, "/pokemon?import_err="+url.QueryEscape("Nenhuma transação reconhecida no texto colado."), http.StatusSeeOther)
-		return
-	}
 	var res store.GGMAXImportResult
 	var err error
-	a.withCore(func(c *core) { res, err = c.store.ImportGGMAX(txs) })
+
+	if txs := ggmax.Parse(raw); len(txs) > 0 {
+		// Full transaction block pasted from the site.
+		a.withCore(func(c *core) { res, err = c.store.ImportGGMAX(txs) })
+	} else if items := ggmax.ParseSimple(raw); len(items) > 0 {
+		// Simple "pedido valor" lines: treat as pending sales (a liberar).
+		a.withCore(func(c *core) {
+			cfg, _ := c.store.Settings()
+			res, err = c.store.AddGGMAXOrders(items, time.Now(), false, cfg.SaleHoldDays)
+		})
+	} else {
+		http.Redirect(w, r, "/pokemon?import_err="+url.QueryEscape("Nenhum pedido reconhecido. Use uma linha por venda: PEDIDO VALOR (ex: J3EEL2E 134,44)."), http.StatusSeeOther)
+		return
+	}
 	if err != nil {
 		http.Redirect(w, r, "/pokemon?import_err="+url.QueryEscape("Falha ao importar: "+err.Error()), http.StatusSeeOther)
 		return
 	}
 	msg := fmt.Sprintf("%d venda(s) importada(s), %d já existente(s) ignorada(s). Liberado: R$ %.2f · A liberar: R$ %.2f",
 		res.Imported, res.Skipped, res.ReleasedValue, res.PendingValue)
+	http.Redirect(w, r, "/pokemon?import_msg="+url.QueryEscape(msg), http.StatusSeeOther)
+}
+
+// handleGGMAXSale registers a single GGMAX sale from an order number and value.
+// It lands in the GGMAX wallet (pending by default) and flows to the finance
+// module — into the bank balance once released and withdrawn.
+func (a *App) handleGGMAXSale(w http.ResponseWriter, r *http.Request) {
+	items := ggmax.ParseSimple(r.FormValue("pedido") + " " + r.FormValue("value"))
+	if len(items) == 0 {
+		http.Redirect(w, r, "/pokemon?import_err="+url.QueryEscape("Informe o número do pedido e o valor."), http.StatusSeeOther)
+		return
+	}
+	date := parseDate(r.FormValue("date"))
+	released := r.FormValue("released") == "on" || r.FormValue("released") == "1"
+	var res store.GGMAXImportResult
+	var err error
+	a.withCore(func(c *core) {
+		cfg, _ := c.store.Settings()
+		res, err = c.store.AddGGMAXOrders(items[:1], date, released, cfg.SaleHoldDays)
+	})
+	if err != nil {
+		http.Redirect(w, r, "/pokemon?import_err="+url.QueryEscape("Falha: "+err.Error()), http.StatusSeeOther)
+		return
+	}
+	if res.Imported == 0 {
+		http.Redirect(w, r, "/pokemon?import_err="+url.QueryEscape("Pedido "+items[0].Code+" já cadastrado."), http.StatusSeeOther)
+		return
+	}
+	msg := fmt.Sprintf("Venda %s registrada: R$ %.2f (%s).", items[0].Code, items[0].Value,
+		map[bool]string{true: "disponível", false: "a liberar"}[released])
 	http.Redirect(w, r, "/pokemon?import_msg="+url.QueryEscape(msg), http.StatusSeeOther)
 }
 

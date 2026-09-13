@@ -107,3 +107,70 @@ func parseBRL(s string) float64 {
 	f, _ := strconv.ParseFloat(s, 64)
 	return f
 }
+
+// parseMoneyLoose parses a value in pt-BR or US format (decimal separator is
+// whichever of '.' or ',' comes last).
+func parseMoneyLoose(s string) float64 {
+	s = strings.TrimSpace(strings.ReplaceAll(s, "R$", ""))
+	lastDot := strings.LastIndex(s, ".")
+	lastComma := strings.LastIndex(s, ",")
+	switch {
+	case lastDot >= 0 && lastComma >= 0:
+		if lastComma > lastDot {
+			s = strings.ReplaceAll(s, ".", "")
+			s = strings.ReplaceAll(s, ",", ".")
+		} else {
+			s = strings.ReplaceAll(s, ",", "")
+		}
+	case lastComma >= 0:
+		s = strings.ReplaceAll(s, ",", ".")
+	}
+	f, _ := strconv.ParseFloat(s, 64)
+	return f
+}
+
+// Simple is a lightweight "order + value" GGMAX entry.
+type Simple struct {
+	Code  string
+	Value float64
+}
+
+var (
+	reSimpleVal  = regexp.MustCompile(`(\d[\d.,]*[.,]\d{2})`)
+	reSimpleNum  = regexp.MustCompile(`\d+`)
+	reSimpleCode = regexp.MustCompile(`#?([A-Za-z0-9]{3,})`)
+)
+
+// ParseSimple parses lines of "<order> <value>" (in any order, with optional #,
+// "R$", separators like "-" or ":"). One entry per line. It is used when the
+// user types just the order number and the account's value instead of pasting
+// the whole GGMAX transaction block.
+func ParseSimple(raw string) []Simple {
+	var out []Simple
+	for _, line := range strings.Split(raw, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		valStr := ""
+		if m := reSimpleVal.FindAllString(line, -1); len(m) > 0 {
+			valStr = m[len(m)-1]
+		} else if m := reSimpleNum.FindAllString(line, -1); len(m) > 0 {
+			valStr = m[len(m)-1]
+		}
+		if valStr == "" {
+			continue
+		}
+		value := parseMoneyLoose(valStr)
+		rest := strings.Replace(line, valStr, " ", 1)
+		code := ""
+		if m := reSimpleCode.FindStringSubmatch(rest); m != nil {
+			code = strings.ToUpper(m[1])
+		}
+		if code == "" || value <= 0 {
+			continue
+		}
+		out = append(out, Simple{Code: code, Value: value})
+	}
+	return out
+}

@@ -5,7 +5,8 @@
     <div class="breadcrumb">Catálogo de contas · taxa GGMAX aplicada automaticamente</div>
   </div>
   <div class="btn-row">
-    <button class="btn" onclick="openDialog('dlg-import')">{{icon "upload"}} Importar GGMAX</button>
+    <button class="btn" onclick="openDialog('dlg-ggmax-sale')">{{icon "tag"}} Registrar venda GGMAX</button>
+    <button class="btn" onclick="openDialog('dlg-import')">{{icon "upload"}} Importar lista</button>
     <button class="btn primary" onclick="openDialog('dlg-create')">{{icon "plus"}} Nova conta</button>
   </div>
 </div>
@@ -122,12 +123,30 @@
 
 <div id="accounts-data" data-json="{{.AccountsJSON}}" hidden></div>
 
+<dialog id="dlg-ggmax-sale">
+  <form method="post" action="/ggmax/sale">
+    <div class="dialog-head"><h3>Registrar venda GGMAX</h3><button type="button" class="close-x" onclick="closeDialog('dlg-ggmax-sale')">{{icon "x"}}</button></div>
+    <div class="dialog-body">
+      <div class="note info sm">{{icon "info"}}<div>Vendeu uma conta? Coloque o número do pedido e o valor. Vai para o financeiro (carteira GGMAX) e libera para o saldo em {{.Cfg.SaleHoldDays}} dias.</div></div>
+      <div class="form-grid">
+        <div class="field"><label>Número do pedido</label><input name="pedido" placeholder="J3EEL2E ou 15344660" required></div>
+        <div class="field"><label>Valor da conta (R$)</label><input name="value" inputmode="decimal" placeholder="134,44" required></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Data da venda</label><input name="date" type="date" value="{{today}}"></div>
+      </div>
+      <div class="check"><input type="checkbox" id="ggmax-released" name="released"><label for="ggmax-released">Já está concluída/disponível (entra no saldo GGMAX agora, sem esperar liberar)</label></div>
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-ggmax-sale')">Cancelar</button><button class="btn primary">Registrar venda</button></div>
+  </form>
+</dialog>
+
 <dialog id="dlg-import">
   <form method="post" action="/import/ggmax">
     <div class="dialog-head"><h3>Importar vendas do GGMAX</h3><button type="button" class="close-x" onclick="closeDialog('dlg-import')">{{icon "x"}}</button></div>
     <div class="dialog-body">
-      <div class="note info sm">{{icon "info"}}<div>Cole a lista de transações do GGMAX. Vendas <b>Concluídas</b> entram no saldo agora; as <b>a liberar</b> entram automaticamente na data de liberação. Reimportar a mesma lista não duplica nada.</div></div>
-      <div class="field"><label>Transações (copie e cole do site)</label><textarea name="data" rows="10" placeholder="#15344660	11/09/26 23:23&#10;Pagamento #16109500, venda #J3EEL2E&#10;Libera em 18/09/26 23:23&#10;R$ 134,44&#10;a liberar&#10;—" style="min-height:200px;font-family:ui-monospace,monospace;font-size:12.5px"></textarea></div>
+      <div class="note info sm">{{icon "info"}}<div>Uma venda por linha: <b>PEDIDO VALOR</b> — ex: <code>J3EEL2E 134,44</code>. Também aceita a lista completa colada do site. Entram como "a liberar" e liberam sozinhas após os dias configurados. Reimportar não duplica.</div></div>
+      <div class="field"><label>Vendas (pedido e valor, uma por linha)</label><textarea name="data" rows="8" placeholder="J3EEL2E 134,44&#10;3RM4OGQ 100,82&#10;7GM76MJ 420,10" style="min-height:180px;font-family:ui-monospace,monospace;font-size:13px"></textarea></div>
     </div>
     <div class="dialog-foot"><button type="button" class="btn ghost" onclick="closeDialog('dlg-import')">Cancelar</button><button class="btn primary">{{icon "upload"}} Importar</button></div>
   </form>

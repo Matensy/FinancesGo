@@ -79,3 +79,28 @@ func TestParseSample(t *testing.T) {
 		t.Errorf("pending total = %.2f, want 235.26", pending)
 	}
 }
+
+func TestParseSimple(t *testing.T) {
+	raw := `J3EEL2E 134,44
+#3RM4OGQ  R$ 100,82
+7GM76MJ - 1.461,94
+15344660: 100
+bad line no value here
+100Q30K   2,995.51`
+	items := ParseSimple(raw)
+	if len(items) != 5 {
+		t.Fatalf("parsed %d items, want 5", len(items))
+	}
+	want := []Simple{
+		{"J3EEL2E", 134.44},
+		{"3RM4OGQ", 100.82},
+		{"7GM76MJ", 1461.94},
+		{"15344660", 100},
+		{"100Q30K", 2995.51}, // US format value
+	}
+	for i, w := range want {
+		if items[i].Code != w.Code || math.Abs(items[i].Value-w.Value) > 0.001 {
+			t.Errorf("item %d = %+v, want %+v", i, items[i], w)
+		}
+	}
+}
