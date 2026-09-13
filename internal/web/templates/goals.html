@@ -35,13 +35,14 @@
   </div>
 
   <div class="card">
-    <div class="card-head"><div><h2 class="card-title">Este mês</h2><div class="card-sub">{{$g.DaysElapsed}} de {{$g.DaysInMonth}} dias</div></div><span class="chip p">{{icon "target"}}</span></div>
+    <div class="card-head"><div><h2 class="card-title">Este mês</h2><div class="card-sub">Meta do mês: {{money $g.MonthTarget}} ({{$g.DaysInMonth}} dias)</div></div><span class="chip p">{{icon "target"}}</span></div>
     <div class="stat-value sm pos">{{money $g.MonthEarned}}</div>
-    <div class="stat-foot mt">Meta até hoje: {{money $g.MonthTarget}}</div>
+    <div class="bag-bar mt" style="height:8px"><span style="width:{{pctOf $g.MonthEarned $g.MonthTarget}}%"></span></div>
+    <div class="stat-foot mt">{{pctOf $g.MonthEarned $g.MonthTarget}}% da meta · deveria ter {{money $g.MonthTargetToDate}} até hoje</div>
     {{if $g.Ahead}}
-      <div class="note ok sm mt">{{icon "check"}}<div>Adiantado <b>{{money $g.BalanceAbs}}</b> na meta do mês.</div></div>
+      <div class="note ok sm mt">{{icon "check"}}<div>No ritmo: adiantado <b>{{money $g.BalanceAbs}}</b>.</div></div>
     {{else}}
-      <div class="note warn sm mt">{{icon "flame"}}<div>Atrasado <b>{{money $g.BalanceAbs}}</b> — precisa recuperar.</div></div>
+      <div class="note warn sm mt">{{icon "flame"}}<div>Atrasado <b>{{money $g.BalanceAbs}}</b> pro ritmo de hoje.</div></div>
     {{end}}
   </div>
 </div>

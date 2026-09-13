@@ -20,11 +20,12 @@ type GoalTracker struct {
 	WeekEarned float64 // last 7 days
 	WeekTarget float64 // goal * 7
 
-	MonthEarned  float64
-	MonthTarget  float64 // goal * days elapsed this month
-	MonthBalance float64 // MonthEarned - MonthTarget (>0 ahead, <0 behind)
-	Ahead        bool
-	BalanceAbs   float64
+	MonthEarned       float64
+	MonthTarget       float64 // goal * days in the month (the full monthly goal)
+	MonthTargetToDate float64 // goal * days elapsed so far (for pace comparison)
+	MonthBalance      float64 // MonthEarned - MonthTargetToDate (>0 ahead, <0 behind)
+	Ahead             bool
+	BalanceAbs        float64
 
 	DaysElapsed int
 	DaysInMonth int
@@ -78,9 +79,13 @@ func (e *Engine) Goals() (GoalTracker, error) {
 	g.EarnedToday = round2(earnedToday)
 	g.MonthEarned = round2(monthEarned)
 	g.WeekEarned = round2(weekEarned)
-	g.MonthTarget = round2(cfg.DailyGoal * float64(daysActive))
+	// Full monthly goal (e.g. 100/day * 30 days = 3000) and the weekly goal.
+	g.MonthTarget = round2(cfg.DailyGoal * float64(g.DaysInMonth))
 	g.WeekTarget = round2(cfg.DailyGoal * 7)
-	g.MonthBalance = round2(monthEarned - g.MonthTarget)
+	// Pace: what you should have by now, given the active streak, decides
+	// whether you're ahead or behind.
+	g.MonthTargetToDate = round2(cfg.DailyGoal * float64(daysActive))
+	g.MonthBalance = round2(monthEarned - g.MonthTargetToDate)
 	g.Ahead = g.MonthBalance >= 0
 	g.BalanceAbs = round2(abs(g.MonthBalance))
 
