@@ -211,41 +211,62 @@
     return (main + paren).trim();
   }
 
-  function formatDescription(raw, level, team) {
-    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-    let pokemons = "", counts = "", stardust = "";
-    const nameChunks = [];
+  const MARK_EMOJIS = ["🟥", "🟦", "🟨", "📦", "⭐", "✨", "🐉"];
 
-    lines.forEach((line) => {
-      const mPok = line.match(/(\d+)\s*\/\s*(\d+)\s*pok/i);
-      const mCount = line.match(/(\d+)\s*lend[aá]rios?\s*\/\s*(\d+)\s*shinys?/i);
-      const isStar = /stardust/i.test(line) || /\d\s*kk\b/i.test(line);
-      if (mPok && !pokemons) {
-        pokemons = mPok[1] + "/" + mPok[2];
-      } else if (mCount && !counts) {
-        counts = mCount[1] + " Lendários / " + mCount[2] + " Shinys";
-      } else if (isStar && !stardust) {
-        stardust = line.replace(/\.$/, "").replace(/^de\s+/i, "").trim();
-        if (!/stardust/i.test(stardust)) stardust += " de Stardust";
-        // Normalize "1,1kk de stardust" -> "1,1KK de Stardust"
-        stardust = stardust.replace(/kk/gi, "KK").replace(/\bstardust\b/i, "Stardust").replace(/\bde\b/i, "de");
-      } else if (line.split("/").length >= 3) {
-        nameChunks.push(line);
-      }
+  // extractNames pulls just the pokémon names out of the description, ignoring
+  // any header/count lines a previous format run may have added (idempotent).
+  function extractNames(raw) {
+    const kept = raw.split(/\r?\n/).filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      if (MARK_EMOJIS.some((e) => t.startsWith(e))) return false;
+      if (/pok[eé]mons lend[aá]rios e shinys/i.test(t)) return false;
+      if (/^level\b/i.test(t)) return false;
+      if (/^\d+\s*\/\s*\d+\s*pok/i.test(t)) return false;
+      if (/lend[aá]rios?\s*\/\s*\d+\s*shin/i.test(t)) return false;
+      if (/stardust/i.test(t)) return false;
+      return true;
     });
+    return kept.join("/");
+  }
 
-    const names = nameChunks.join("/").split("/").map(formatName).filter(Boolean);
+  function normalizeStardust(s) {
+    s = (s || "").trim().replace(/\.$/, "");
+    if (!s) return "";
+    s = s.replace(/kk/gi, "KK").replace(/\bk\b/gi, "K");
+    if (!/stardust/i.test(s)) s += " de Stardust";
+    else s = s.replace(/\bstardust\b/i, "Stardust");
+    return s;
+  }
 
-    const t = TEAMS[team] || null;
+  // formatDescription builds the GGMAX-style listing using the already-filled
+  // form fields for level/team/counts/stardust; the description holds only the
+  // pokémon names.
+  function formatDescription(raw, f) {
+    const names = extractNames(raw).split(/[\/,]/).map(formatName).filter(Boolean);
+    const t = TEAMS[f.team] || null;
     const out = [];
+
     let header = "";
     if (t) header += t.emoji + " ";
-    header += "Level " + (level || "?");
+    header += "Level " + (f.level || "?");
     if (t) header += " (" + t.name + ")";
     out.push(header);
-    if (pokemons) out.push("📦 " + pokemons + " Pokémons");
+
+    if (f.pokemonCount || f.bagCapacity) {
+      out.push("📦 " + (f.pokemonCount || "?") + "/" + (f.bagCapacity || "?") + " Pokémons");
+    }
+    const lendNum = String(f.legendaries || "").trim();
+    const shiny = String(f.shinies || "").trim();
+    let counts = "";
+    if (/^\d+$/.test(lendNum) && shiny) counts = lendNum + " Lendários / " + shiny + " Shinys";
+    else if (shiny) counts = shiny + " Shinys";
+    else if (/^\d+$/.test(lendNum)) counts = lendNum + " Lendários";
     if (counts) out.push("⭐ " + counts);
-    if (stardust) out.push("✨ " + stardust);
+
+    const star = normalizeStardust(f.stardust);
+    if (star) out.push("✨ " + star);
+
     if (names.length) {
       out.push("");
       out.push("🐉 Pokémons Lendários e Shinys");
@@ -258,10 +279,17 @@
     const form = btn.closest("form");
     if (!form) return;
     const desc = form.querySelector('[name="description"]');
-    const level = (form.querySelector('[name="level"]') || {}).value || "";
-    const team = (form.querySelector('[name="team"]') || {}).value || "";
     if (!desc) return;
-    desc.value = formatDescription(desc.value, level, team);
+    const val = (n) => { const el = form.querySelector('[name="' + n + '"]'); return el ? el.value : ""; };
+    desc.value = formatDescription(desc.value, {
+      level: val("level"),
+      team: val("team"),
+      shinies: val("shinies"),
+      pokemonCount: val("pokemon_count"),
+      bagCapacity: val("bag_capacity"),
+      legendaries: val("legendaries"),
+      stardust: val("stardust")
+    });
   };
 
   document.addEventListener("DOMContentLoaded", initCharts);
